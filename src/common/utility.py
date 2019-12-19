@@ -1,4 +1,6 @@
 # define some common useful functions
+import os
+import numpy as np
 
 
 def border_msg(msg):
@@ -29,3 +31,45 @@ def print_element(iterable):
     """
     for element in iterable:
         print(element)
+
+
+def get_filename(path):
+    """
+    Return filename of a specific path
+
+    Parameter
+    ---------
+    path : string
+
+    Return
+    ------
+    filename : string
+    """
+    filename = os.path.basename(path)
+    return filename
+
+
+def from_file_to_elist(file, delimiter: str):
+    """
+    Return list of edges given a file containing pairs of nodes
+
+    Parameter
+    ---------
+    file : file
+    delimiter : string
+        kind of delimiter between two nodes in the file
+    Return
+    ------
+    elist: list of edges
+    """
+    #TODO optimize this function
+    elist = np.array(())
+    with open(file) as f:
+        for line in f:
+            line = tuple(line.strip().split(delimiter))
+            elist = np.append(elist, line)
+        number_edges = elist.shape
+        border_msg("Number of edges: {}".format(number_edges))
+
+    return elist
+
