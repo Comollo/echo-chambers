@@ -3,7 +3,7 @@
 import networkx as nx
 
 
-class RandomWalkControversy:
+class ControversyMeasure:
 
     def __init__(self, graph: nx.Graph):
         self.graph = graph
