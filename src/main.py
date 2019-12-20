@@ -9,11 +9,14 @@ from src.community.partition import CommunityDetection
 try:
     path = sys.argv[1]
     filename = get_filename(path)
-    border_msg("Creating graph for {}".format(filename))
-    graph = nx.read_weighted_edgelist(path, delimiter=",")
-    border_msg("Graph created")
-    communities = CommunityDetection(graph=graph, algorithm="KERNIGHAN")
-    a = 0
+
+    print("Creating graph for {}".format(filename))
+
+    graph = nx.read_weighted_edgelist(path, delimiter="\t")
+
+    print("Graph created")
+
+    communities = CommunityDetection(graph=graph, algorithm="fluidc")
     # G = nx.read_edgelist(file, delimiter='\t')
 except Exception as e:
     print("An error occurred: {}".format(e))
