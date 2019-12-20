@@ -2,14 +2,19 @@
 
 import sys
 import networkx as nx
-from src.common.utility import get_filename, from_file_to_elist
+from src.common.utility import get_filename, border_msg
+from src.community.partition import CommunityDetection
+
 
 try:
-    file = sys.argv[1]
-    filename = get_filename(file)
-    print("Creating graph for {}".format(filename))
-    elist = from_file_to_elist(file, "\t")
-    #G = nx.read_edgelist(file, delimiter='\t')
+    path = sys.argv[1]
+    filename = get_filename(path)
+    border_msg("Creating graph for {}".format(filename))
+    graph = nx.read_weighted_edgelist(path, delimiter=",")
+    border_msg("Graph created")
+    communities = CommunityDetection(graph=graph, algorithm="KERNIGHAN")
+    a = 0
+    # G = nx.read_edgelist(file, delimiter='\t')
 except Exception as e:
     print("An error occurred: {}".format(e))
     raise e

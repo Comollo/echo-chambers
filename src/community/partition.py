@@ -22,8 +22,8 @@ class CommunityDetection:
             print_element(self.algorithms)
             raise ValueError("algorithm not valid")
         self.algorithm = algorithm
-        self.community = None
+        self.community = self.get_community()
 
     def get_community(self):
         if self.algorithm == Algorithm.KERNIGHAN.value:
-            self.community = community.kernighan_lin_bisection(self.graph)
+            return community.kernighan_lin_bisection(self.graph)

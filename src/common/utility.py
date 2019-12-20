@@ -1,6 +1,7 @@
 # define some common useful functions
 import os
-import numpy as np
+import pandas as pd
+import networkx as nx
 
 
 def border_msg(msg):
@@ -49,27 +50,45 @@ def get_filename(path):
     return filename
 
 
-def from_file_to_elist(file, delimiter: str):
+def file_to_elist(file, delimiter: str):
     """
     Return list of edges given a file containing pairs of nodes
 
     Parameter
     ---------
-    file : file
+    file : file representing an edge list representation of a graph
     delimiter : string
         kind of delimiter between two nodes in the file
     Return
     ------
     elist: list of edges
     """
-    #TODO optimize this function
-    elist = np.array(())
+    elist = list()
     with open(file) as f:
         for line in f:
             line = tuple(line.strip().split(delimiter))
-            elist = np.append(elist, line)
-        number_edges = elist.shape
+            elist.append(line)
+        number_edges = len(elist)
         border_msg("Number of edges: {}".format(number_edges))
 
     return elist
 
+
+# def df_to_graph(path, delimiter: str, header: bool = None, attribute: list = None):
+#     """
+#     Read file as a pandas df and create the graph
+#
+#     Parameter
+#     ---------
+#     file : file representing an edge list representation of a graph
+#     delimiter : string
+#         kind of delimiter between two nodes in the file
+#     header : header of the file
+#     attribute : columns representing the attribute of the node
+#     Return
+#     ------
+#     G: graph
+#     """
+#     df = pd.read_csv(path, sep=delimiter, header=header)
+#     graph = nx.from_pandas_edgelist(df)
+#     return graph
