@@ -74,6 +74,21 @@ def file_to_elist(file, delimiter: str):
     return elist
 
 
+def lists_to_dict(keys: list, values: list):
+    """
+    Return a dict given to list
+
+    Parameter
+    ---------
+    keys : list containing key
+    values : list containing values
+    Return
+    ------
+    keys_and_values : dict from two lists
+    """
+    keys_and_values = dict(zip(keys, values))
+    return keys_and_values
+
 # def df_to_graph(path, delimiter: str, header: bool = None, attribute: list = None):
 #     """
 #     Read file as a pandas df and create the graph

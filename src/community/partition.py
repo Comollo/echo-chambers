@@ -20,6 +20,7 @@ class CommunityDetection:
                   Algorithm.FLUIDC.value]
 
     def __init__(self, graph: nx.Graph, algorithm: str, k: int = 2):
+
         self.graph = graph
         if algorithm.upper() not in self.algorithms:
             print("The available partition algorithms are:")
@@ -29,6 +30,7 @@ class CommunityDetection:
         self.communities = self.get_community(k)
 
     def get_community(self, k):
+
         print("Finding communities using: {}".format(self.algorithm.upper()))
 
         communities: Dict[int, set] = dict()
