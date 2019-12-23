@@ -1,11 +1,10 @@
 # define controversy measure
 
 import sys
-
 import networkx as nx
 import random
 from abc import ABC, abstractmethod
-from src.common.utility import border_msg, lists_to_dict
+from src.common.utility import border_msg
 
 
 class ControversyMeasure(ABC):
@@ -35,8 +34,8 @@ class RandomWalkControversy(ControversyMeasure):
         left = list(self.communities[0])
         right = list(self.communities[1])
 
-        dict_left = lists_to_dict(left, [1] * len(left))  # Todo create function in utility
-        dict_right = lists_to_dict(right, [1] * len(right))
+        dict_left = self.get_dict(left)  # Todo created function in utility
+        dict_right = self.get_dict(right)
 
         left_left = 0
         left_right = 0
