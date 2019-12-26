@@ -1,41 +1,31 @@
 # define controversy measure
 
-import sys
 import networkx as nx
 import random
-from abc import ABC, abstractmethod
-from src.common.utility import border_msg
-
-
-class ControversyMeasure(ABC):
-
-    def __init__(self, graph: nx.Graph, communities: dict):
-        self.graph = graph
-        self.communities = communities
-        self.controversy = self.get_controversy()
-
-    @abstractmethod
-    def get_controversy(self):
-        pass
+from src.controversy.controversy_measure import ControversyMeasure
+from src.common.utility import border_msg, lists_to_dict
 
 
 class RandomWalkControversy(ControversyMeasure):
 
     def __init__(self, graph: nx.Graph, communities: dict, percent: float = 0.10):
 
-        super().__init__(graph, communities)
         self.percent = percent
+        super().__init__(graph, communities)
 
     def get_controversy(self):
 
-        percent = self.percent  # Todo create external parameter
+        percent = self.percent
         graph = self.graph
 
         left = list(self.communities[0])
         right = list(self.communities[1])
 
-        dict_left = self.get_dict(left)  # Todo created function in utility
-        dict_right = self.get_dict(right)
+        left_values = [1] * len(left)
+        dict_left = lists_to_dict(left, left_values)
+
+        right_values = [1] * len(right)
+        dict_right = lists_to_dict(right, right_values)
 
         left_left = 0
         left_right = 0
@@ -47,17 +37,17 @@ class RandomWalkControversy(ControversyMeasure):
 
         for j in range(1, 1000):
 
-            user_nodes_left = self.get_random_nodes_from_labels(graph, left_percent, left, "left")
-            user_nodes_right = self.get_random_nodes_from_labels(graph, right_percent, right, "right")
+            user_nodes_left = self.get_random_nodes_from_labels(left_percent, left, "left")
+            user_nodes_right = self.get_random_nodes_from_labels(right_percent, right, "right")
 
             user_nodes_left_list = list(user_nodes_left.keys())
             for i in range(len(user_nodes_left_list)-1):
 
                 node = user_nodes_left_list[i]
                 other_nodes = user_nodes_left_list[:i] + user_nodes_left_list[i+1:]
-                other_nodes_dict = self.get_dict(other_nodes)
-                side = self.perform_random_walk(G, node, other_nodes_dict, user_nodes_right)
-                print(side)
+                values = [1] * len(other_nodes)
+                other_nodes_dict = lists_to_dict(other_nodes, values)
+                side = self.perform_random_walk(graph, node, other_nodes_dict, user_nodes_right)
 
                 if side == "left":
                     left_left += 1
@@ -70,7 +60,8 @@ class RandomWalkControversy(ControversyMeasure):
 
                 node = user_nodes_right_list[i]
                 other_nodes = user_nodes_right_list[:i] + user_nodes_right_list[i+1:]
-                other_nodes_dict = self.get_dict(other_nodes)
+                values = [1] * len(other_nodes)
+                other_nodes_dict = lists_to_dict(other_nodes, values)
                 side = self.perform_random_walk(graph, node, user_nodes_left, other_nodes_dict)
 
                 if side == "left":
@@ -82,23 +73,19 @@ class RandomWalkControversy(ControversyMeasure):
                 else:
                     continue
 
-            if j % 1 == 0:
-                print(sys.stderr, j)
-
-        print("left -> left", left_left)
-        print("left -> right", left_right)
-        print("right -> right", right_right)
-        print("right -> left", right_left)
+            print("Getting probabilities -> round {}".format(j))
 
         e1 = left_left*1.0 / (left_left+right_left)
         e2 = left_right*1.0 / (left_right+right_right)
         e3 = right_left*1.0 / (left_left+right_left)
         e4 = right_right*1.0 / (left_right+right_right)
+        rwc = e1*e4 - e2*e3
 
-        border_msg("Random Walk Controversy: {}".format(e1*e4 - e2*e3))
+        border_msg("Random Walk Controversy: {}".format(rwc))
+        return rwc
 
     @staticmethod
-    def get_random_nodes_from_labels(graph, k, side, flag):
+    def get_random_nodes_from_labels(k, side, flag):
 
         random_nodes = []
         random_nodes1 = {}
@@ -128,9 +115,7 @@ class RandomWalkControversy(ControversyMeasure):
     @staticmethod
     def perform_random_walk(graph, starting_node, user_nodes_side1, user_nodes_side2):
 
-        dict_nodes = {}  # contains unique nodes seen till now;
-        nodes = graph.nodes()
-        num_edges = len(graph.edges())
+        dict_nodes = {}  # contains unique nodes seen till now
         step_count = 0
         flag = 0
         side = ""
@@ -151,11 +136,3 @@ class RandomWalkControversy(ControversyMeasure):
                 flag = 1
 
         return side
-
-    @staticmethod
-    def get_dict(nodes_list: list):
-
-        dict_nodes = {}
-        for node in nodes_list:
-            dict_nodes[node] = 1
-        return dict_nodes
