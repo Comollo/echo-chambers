@@ -2,7 +2,7 @@
 
 import sys
 import networkx as nx
-from src.common.utility import get_filename, border_msg
+from src.common.utility import get_filename, write_communities
 from src.community.partition import CommunityDetection
 from src.controversy.measures import RandomWalkControversy
 
@@ -15,9 +15,10 @@ try:
     print("Graph created")
 
     communities = CommunityDetection(graph=graph, algorithm="fluidc")
+    # write_communities(communities.communities, filename)
 
     controversy = RandomWalkControversy(graph=graph, communities=communities.communities)
-    # G = nx.read_edgelist(file, delimiter='\t')
+
 except Exception as e:
     print("An error occurred: {}".format(e))
     raise e
