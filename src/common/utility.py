@@ -1,7 +1,7 @@
 # define some common useful functions
+
 import os
-import pandas as pd
-import networkx as nx
+from typing import Dict
 
 
 def border_msg(msg):
@@ -89,21 +89,27 @@ def lists_to_dict(keys: list, values: list):
     keys_and_values = dict(zip(keys, values))
     return keys_and_values
 
-# def df_to_graph(path, delimiter: str, header: bool = None, attribute: list = None):
-#     """
-#     Read file as a pandas df and create the graph
-#
-#     Parameter
-#     ---------
-#     file : file representing an edge list representation of a graph
-#     delimiter : string
-#         kind of delimiter between two nodes in the file
-#     header : header of the file
-#     attribute : columns representing the attribute of the node
-#     Return
-#     ------
-#     G: graph
-#     """
-#     df = pd.read_csv(path, sep=delimiter, header=header)
-#     graph = nx.from_pandas_edgelist(df)
-#     return graph
+
+def write_communities(communities: Dict[int, set], filename: str, path: str = "../data/"):
+    """
+    Write nodes to txt
+
+    Parameter
+    ---------
+    communities : dictionary containing communities and nodes
+    filename : name for txt
+    """
+    print("writing communities")
+    original_name = filename.strip().split(".")
+    for community in communities:
+
+        txt_name = original_name[0] + "_" + str(community) + "." + original_name[1]
+        file = open(path + txt_name, 'w')
+
+        for node in communities[community]:
+            file.write(node)
+            file.write('\n')
+        print("{} has been written".format(txt_name))
+        file.close()
+
+    print("all communities have been written")
