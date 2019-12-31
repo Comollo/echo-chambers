@@ -118,12 +118,20 @@ class RandomWalkControversy(ControversyMeasure):
 
         flag = 0
         side = ""
+        node_seen = dict()
+        neighbors = list(graph.neighbors(starting_node))
+        num_neighbors = len(neighbors)
 
         while flag != 1:
 
-            neighbors = list(graph.neighbors(starting_node))
             random_num = random.randint(0, len(neighbors)-1)
             neighbor = neighbors[random_num]
+
+            if neighbor in node_seen:
+                neighbors.remove(neighbor)
+                node_seen[neighbor] += 1
+            else:
+                node_seen[neighbor] = 1
 
             if neighbor in user_nodes_side1:
                 side = "left"
@@ -133,7 +141,7 @@ class RandomWalkControversy(ControversyMeasure):
                 side = "right"
                 flag = 1
 
-            else:
-                pass  # Todo create method to loop over neighbors if stuck
+            elif len(node_seen) == num_neighbors:
+                break
 
         return side
