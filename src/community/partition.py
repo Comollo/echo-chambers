@@ -1,4 +1,4 @@
-# define function to partition a graph
+# define functions to partition a graph
 
 import networkx as nx
 from enum import Enum, unique

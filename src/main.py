@@ -1,4 +1,4 @@
-# define main function
+# define main
 
 import sys
 import networkx as nx

@@ -98,6 +98,7 @@ def write_communities(communities: Dict[int, set], filename: str, path: str = ".
     ---------
     communities : dictionary containing communities and nodes
     filename : name for txt
+    path : location of your file
     """
     print("writing communities")
     original_name = filename.strip().split(".")
