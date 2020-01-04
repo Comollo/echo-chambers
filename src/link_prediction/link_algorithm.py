@@ -5,15 +5,15 @@ from typing import Dict
 from networkx import Graph
 
 
-class ControversyMeasure(ABC):
+class LinkAlgorithm(ABC):
 
     def __init__(self, graph: Graph, communities: Dict[int, set]):
 
         self.graph = graph
         self.communities = communities
-        self.controversy = self.get_controversy()
+        self.link_prediction = self.prediction()
 
     @abstractmethod
-    def get_controversy(self):
+    def prediction(self):
 
         pass

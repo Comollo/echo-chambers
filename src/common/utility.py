@@ -1,6 +1,7 @@
 # define some common useful functions
 
 import os
+import networkx as nx
 from typing import Dict
 
 
@@ -86,6 +87,8 @@ def lists_to_dict(keys: list, values: list):
     ------
     keys_and_values : dict from two lists
     """
+    if len(keys) != len(values):
+        raise Exception("Two lists are not of the same length")
     keys_and_values = dict(zip(keys, values))
     return keys_and_values
 
