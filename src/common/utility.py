@@ -51,6 +51,22 @@ def get_filename(path):
     return filename
 
 
+def get_folder(path):
+    """
+    Return folder of a specific path
+
+    Parameter
+    ---------
+    path : string
+
+    Return
+    ------
+    folder : string
+    """
+    folder = os.path.dirname(path)
+    return folder
+
+
 def file_to_elist(file, delimiter: str):
     """
     Return list of edges given a file containing pairs of nodes
@@ -117,3 +133,25 @@ def write_communities(communities: Dict[int, set], filename: str, path: str = ".
         file.close()
 
     print("all communities have been written")
+
+
+def write_gexf (graph: nx.Graph, filename: str, path: str = "../data/"):
+    """
+    Write graph into gexf format
+
+    Parameter
+    ---------
+    graph : nx.Graph
+    filename : name for txt
+    path : location of your file
+    """
+
+    gexf = ".gexf"
+
+    if not path.strip().endswith("/"):
+        path = path + "/"
+
+    original_name = filename.strip().split(".")
+    destination = path + original_name[0] + gexf
+    nx.write_gexf(graph, destination)
+
