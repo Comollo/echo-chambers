@@ -15,34 +15,43 @@ class LinkWithBetweenness(LinkAlgorithm):
 
     def prediction(self):
 
-        left = list(self.communities[0])
-        left_values = [1] * len(left)
-        dict_left = lists_to_dict(left, left_values)
+        # left = list(self.communities[0])
+        # left_values = [1] * len(left)
+        # dict_left = lists_to_dict(left, left_values)
+        #
+        # right = list(self.communities[1])
+        # right_values = [1] * len(right)
+        # dict_right = lists_to_dict(right, right_values)
 
-        right = list(self.communities[1])
-        right_values = [1] * len(right)
-        dict_right = lists_to_dict(right, right_values)
+        highest_betweenness = dict()
 
-        print("Getting betweenness")
-        betweenness = self.get_betweenness(self.graph)
+        for community in self.communities:
+
+            print("Getting betweenness for community {}".format(community))
+            subgraph = nx.subgraph(self.graph, self.communities[community])
+            highest_betweenness[community] = self.get_betweenness(subgraph)
+
         print("Betweenness done")
-        k_highest_nodes = list(betweenness.keys())[:self.k]
 
-        highest_left = dict()
-        highest_right = dict()
+        # k_highest_nodes = list(betweenness.keys())[:self.k]
 
-        for node in k_highest_nodes:
-            if node in dict_left:
-                highest_left[node] = betweenness[node]
+        # highest_left = dict()
+        # highest_right = dict()
+        #
+        # for node in k_highest_nodes:
+        #     if node in dict_left:
+        #         highest_left[node] = betweenness[node]
+        #
+        #     elif node in dict_right:
+        #         highest_right[node] = betweenness[node]
 
-            elif node in dict_right:
-                highest_right[node] = betweenness[node]
+        # print("Number of left nodes with highest betweenness: {}".format(len(highest_left)))
+        # print("Number of right nodes with highest betweenness: {}".format(len(highest_right)))
+        highest_b_left = highest_betweenness[0].keys()
+        highest_b_right = highest_betweenness[1].keys()
 
-        print("Number of left nodes with highest betweenness: {}".format(len(highest_left)))
-        print("Number of right nodes with highest betweenness: {}".format(len(highest_right)))
-
-        left_node = next(iter(highest_left))
-        right_node = next(iter(highest_right))
+        left_node = next(iter(highest_b_left))
+        right_node = next(iter(highest_b_right))
         graph = self.link_nodes(self.graph, left_node, right_node)
 
         return graph
@@ -62,6 +71,7 @@ class LinkWithBetweenness(LinkAlgorithm):
             # Todo implement alternative
         else:
             graph.add_edge(u, v)
+            print("Edge between {} and {} added".format(u,v))
 
         print("Edge added")
         return graph
