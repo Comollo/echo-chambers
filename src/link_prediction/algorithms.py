@@ -1,8 +1,7 @@
 # define link prediction algorithms
 
 import networkx as nx
-
-from src.common.utility import border_msg
+from random import shuffle
 from src.link_prediction.link_algorithm import LinkAlgorithm
 from itertools import islice
 
@@ -34,7 +33,7 @@ class LinkWithBetweenness(LinkAlgorithm):
         print("Adding {} edges".format(self.k))
 
         for edge in edges_to_add:
-            self.graph = self.link_nodes(self.graph, edge[0], edge[1])
+            self.link_nodes(edge[0], edge[1])
 
     @staticmethod
     def get_betweenness(graph: nx.Graph):
@@ -42,17 +41,6 @@ class LinkWithBetweenness(LinkAlgorithm):
         betweenness = nx.betweenness_centrality(graph, seed=10)
         sorted_betweenness = {k: v for k, v in sorted(betweenness.items(), key=lambda item: item[1], reverse=True)}
         return sorted_betweenness
-
-    @staticmethod
-    def link_nodes(graph: nx.Graph, u, v):
-
-        if graph.has_edge(u, v):
-            raise Exception("Cannot create connection: the edge is already present")
-        else:
-            graph.add_edge(u, v)
-            # print("Edge between {} and {} added".format(u, v))
-
-        return graph
 
     @staticmethod
     def get_highest_betweenness(graph: nx.Graph, highest_b_left: dict, highest_b_right: dict):
@@ -73,3 +61,30 @@ class LinkWithBetweenness(LinkAlgorithm):
             nodes_to_add[betweenness_nodes] = nodes
 
         return nodes_to_add
+
+
+class RandomLink(LinkAlgorithm):
+
+    def __init__(self, graph: nx.Graph, communities: dict, k: int = 1000):
+
+        self.k = k
+        super().__init__(graph, communities)
+
+    def prediction(self):
+
+        left = self.communities[0]
+        right = self.communities[1]
+        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(
+            filter(lambda x:
+                   (x[0] in right and x[1] in left)
+                   or (x[0] in left and x[1] in right),
+                   non_connected_nodes)
+        )
+
+        shuffle(non_connected_nodes)
+        edges_to_add = islice(non_connected_nodes, self.k) if self.k < len(list(non_connected_nodes)) else non_connected_nodes
+        print("Adding {} edges".format(self.k))
+
+        for edge in edges_to_add:
+            self.link_nodes(edge[0], edge[1])

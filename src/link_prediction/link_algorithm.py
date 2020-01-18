@@ -17,3 +17,12 @@ class LinkAlgorithm(ABC):
     def prediction(self):
 
         pass
+
+    def link_nodes(self, u, v):
+
+        if self.graph.has_edge(u, v):
+            raise Exception("Cannot create connection: the edge is already present")
+        else:
+            self.graph.add_edge(u, v)
+
+        return self.graph
