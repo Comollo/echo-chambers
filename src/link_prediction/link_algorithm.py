@@ -11,7 +11,7 @@ class LinkAlgorithm(ABC):
 
         self.graph = graph
         self.communities = communities
-        self.link_prediction = self.prediction()
+        self.prediction()
 
     @abstractmethod
     def prediction(self):

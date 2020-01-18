@@ -30,9 +30,8 @@ class RandomWalkControversy(ControversyMeasure):
         left_percent = int(percent*len(left))
         right_percent = int(percent*len(right))
 
+        print("{} Random Walk Iteration".format(self.iteration))
         for j in range(self.iteration):
-
-            print("Random Walking -> iteration {}".format(j))
 
             user_nodes_left = self.get_random_nodes(left_percent, left)
             user_nodes_right = self.get_random_nodes(right_percent, right)

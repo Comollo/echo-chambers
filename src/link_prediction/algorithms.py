@@ -2,26 +2,19 @@
 
 import networkx as nx
 
-from src.common.utility import lists_to_dict
+from src.common.utility import border_msg
 from src.link_prediction.link_algorithm import LinkAlgorithm
+from itertools import islice
 
 
 class LinkWithBetweenness(LinkAlgorithm):
 
-    def __init__(self, graph: nx.Graph, communities: dict, k: int = 10):
+    def __init__(self, graph: nx.Graph, communities: dict, k: int = 1000):
 
         self.k = k
         super().__init__(graph, communities)
 
     def prediction(self):
-
-        # left = list(self.communities[0])
-        # left_values = [1] * len(left)
-        # dict_left = lists_to_dict(left, left_values)
-        #
-        # right = list(self.communities[1])
-        # right_values = [1] * len(right)
-        # dict_right = lists_to_dict(right, right_values)
 
         highest_betweenness = dict()
 
@@ -33,28 +26,15 @@ class LinkWithBetweenness(LinkAlgorithm):
 
         print("Betweenness done")
 
-        # k_highest_nodes = list(betweenness.keys())[:self.k]
+        highest_betweenness_left = highest_betweenness[0]
+        highest_betweenness_right = highest_betweenness[1]
+        possible_new_edges = self.get_highest_betweenness(self.graph, highest_betweenness_left, highest_betweenness_right)
+        possible_new_edges = {k: v for k, v in sorted(possible_new_edges.items(), reverse=True)}
+        edges_to_add = islice(possible_new_edges.values(), self.k) if self.k < len(possible_new_edges) else possible_new_edges
+        print("Adding {} edges".format(self.k))
 
-        # highest_left = dict()
-        # highest_right = dict()
-        #
-        # for node in k_highest_nodes:
-        #     if node in dict_left:
-        #         highest_left[node] = betweenness[node]
-        #
-        #     elif node in dict_right:
-        #         highest_right[node] = betweenness[node]
-
-        # print("Number of left nodes with highest betweenness: {}".format(len(highest_left)))
-        # print("Number of right nodes with highest betweenness: {}".format(len(highest_right)))
-        highest_b_left = highest_betweenness[0].keys()
-        highest_b_right = highest_betweenness[1].keys()
-
-        left_node = next(iter(highest_b_left))
-        right_node = next(iter(highest_b_right))
-        graph = self.link_nodes(self.graph, left_node, right_node)
-
-        return graph
+        for edge in edges_to_add:
+            self.graph = self.link_nodes(self.graph, edge[0], edge[1])
 
     @staticmethod
     def get_betweenness(graph: nx.Graph):
@@ -68,10 +48,28 @@ class LinkWithBetweenness(LinkAlgorithm):
 
         if graph.has_edge(u, v):
             raise Exception("Cannot create connection: the edge is already present")
-            # Todo implement alternative
         else:
             graph.add_edge(u, v)
-            print("Edge between {} and {} added".format(u,v))
+            # print("Edge between {} and {} added".format(u, v))
 
-        print("Edge added")
         return graph
+
+    @staticmethod
+    def get_highest_betweenness(graph: nx.Graph, highest_b_left: dict, highest_b_right: dict):
+
+        print("Getting 'best' edges")
+        non_connected_nodes = nx.non_edges(graph)
+        non_connected_nodes = filter(lambda x:
+                                     (x[0] in highest_b_right and x[1] in highest_b_left)
+                                     or (x[0] in highest_b_left and x[1] in highest_b_right),
+                                     non_connected_nodes
+                                     )
+        nodes_to_add = dict()
+        for nodes in non_connected_nodes:
+
+            betweenness_first_node = highest_b_left[nodes[0]] if nodes[0] in highest_b_left else highest_b_right[nodes[0]]
+            betweenness_second_node = highest_b_left[nodes[1]] if nodes[1] in highest_b_left else highest_b_right[nodes[1]]
+            betweenness_nodes = betweenness_first_node + betweenness_second_node
+            nodes_to_add[betweenness_nodes] = nodes
+
+        return nodes_to_add
