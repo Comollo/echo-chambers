@@ -5,7 +5,7 @@ import networkx as nx
 from src.common.utility import get_filename, get_folder, write_gexf, write_communities
 from src.community.partition import CommunityDetection
 from src.controversy.measures import RandomWalkControversy
-from src.link_prediction.algorithms import LinkWithBetweenness, RandomLink
+from src.link_prediction.algorithms import LinkWithBetweenness, RandomLink, StateOfArtAlgorithm
 
 try:
     path = sys.argv[1]
@@ -25,7 +25,7 @@ try:
     controversy = RandomWalkControversy(graph=graph, communities=communities.communities)
     print("Number edges before: {}".format(len(graph.edges)))
     # new_graph = LinkWithBetweenness(graph=graph, communities=communities.communities)
-    new_graph = RandomLink(graph=graph, communities=communities.communities)
+    new_graph = StateOfArtAlgorithm(graph=graph, communities=communities.communities, algorithm="PREFERENTIAL_ATTACHMENT")
     print("Number edges after: {}".format(len(new_graph.graph.edges)))
     controversy_post = RandomWalkControversy(graph=new_graph.graph, communities=communities.communities)
 
