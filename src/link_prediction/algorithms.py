@@ -59,7 +59,12 @@ class LinkWithBetweenness(LinkAlgorithm):
     @staticmethod
     def get_betweenness(graph: nx.Graph):
 
-        betweenness = dict(filter(lambda x: x[1] > 0, nx.betweenness_centrality(graph, seed=10).items()))
+        betweenness = dict(
+            filter(
+                lambda x: x[1] > 0,
+                nx.betweenness_centrality(graph, normalized=True, seed=10).items()
+            )
+        )
         sorted_betweenness = {k: v for k, v in sorted(betweenness.items(), key=lambda item: item[1], reverse=True)}
         return sorted_betweenness
 
@@ -92,6 +97,7 @@ class LinkWithBetweenness(LinkAlgorithm):
                                 (betweenness_second_node/frequency_second_node)
             edges_to_add[betweenness_nodes] = nodes
             # TODO log(betweenness_nodes)
+            # TODO set limit on
 
         return edges_to_add
 
