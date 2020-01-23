@@ -2,7 +2,9 @@
 
 import os
 import networkx as nx
+import numpy as np
 from typing import Dict
+from matplotlib import pyplot as plt
 
 
 def border_msg(msg):
@@ -155,3 +157,16 @@ def write_gexf (graph: nx.Graph, filename: str, path: str = "../data/"):
     destination = path + original_name[0] + gexf
     nx.write_gexf(graph, destination)
 
+
+def plot_histogram(values: list, bins: int, title: str):
+    """
+    Plot histogram using matplotlib
+    Parameter
+    ---------
+    values : list
+    bins : histogram bins
+    """
+    values = np.array(values)
+    plt.hist(values, bins=bins)
+    plt.title(title)
+    plt.show()

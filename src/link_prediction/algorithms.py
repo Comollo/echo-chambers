@@ -1,12 +1,12 @@
 # define link prediction algorithms
-from enum import Enum, unique
 
 import networkx as nx
+from collections import Counter
+from enum import Enum, unique
 from random import shuffle
-
 from src.common.utility import print_element
 from src.link_prediction.link_algorithm import LinkAlgorithm
-from itertools import islice
+from itertools import islice, chain
 
 
 @unique
@@ -39,7 +39,9 @@ class LinkWithBetweenness(LinkAlgorithm):
 
         highest_betweenness_left = highest_betweenness[0]
         highest_betweenness_right = highest_betweenness[1]
-        possible_new_edges = self.get_highest_betweenness(self.graph, highest_betweenness_left, highest_betweenness_right)
+        possible_new_edges = self.get_highest_betweenness(self.graph,
+                                                          highest_betweenness_left,
+                                                          highest_betweenness_right)
         possible_new_edges = {k: v for k, v in sorted(possible_new_edges.items(), reverse=True)}
 
         if self.k < len(possible_new_edges):
@@ -66,18 +68,30 @@ class LinkWithBetweenness(LinkAlgorithm):
 
         print("Getting 'best' edges")
         non_connected_nodes = nx.non_edges(graph)
-        non_connected_nodes = filter(lambda x:
-                                     (x[0] in highest_b_right and x[1] in highest_b_left)
-                                     or (x[0] in highest_b_left and x[1] in highest_b_right),
-                                     non_connected_nodes
-                                     )
+        non_connected_nodes = list(
+            filter(
+                lambda x:
+                (x[0] in highest_b_right and x[1] in highest_b_left)
+                or (x[0] in highest_b_left and x[1] in highest_b_right),
+                non_connected_nodes
+            )
+        )
+
+        frequency_nodes = Counter(chain.from_iterable(non_connected_nodes))
         edges_to_add = dict()
+
         for nodes in non_connected_nodes:
 
             betweenness_first_node = highest_b_left[nodes[0]] if nodes[0] in highest_b_left else highest_b_right[nodes[0]]
+            # frequency_first_node = math.log(frequency_nodes[nodes[0]]) if frequency_nodes[nodes[0]] > 1 else 1
+            frequency_first_node = frequency_nodes[nodes[0]]
             betweenness_second_node = highest_b_left[nodes[1]] if nodes[1] in highest_b_left else highest_b_right[nodes[1]]
-            betweenness_nodes = betweenness_first_node + betweenness_second_node
+            # frequency_second_node = math.log(frequency_nodes[nodes[1]]) if frequency_nodes[nodes[1]] > 1 else 1
+            frequency_second_node = frequency_nodes[nodes[1]]
+            betweenness_nodes = (betweenness_first_node/frequency_first_node) + \
+                                (betweenness_second_node/frequency_second_node)
             edges_to_add[betweenness_nodes] = nodes
+            # TODO log(betweenness_nodes)
 
         return edges_to_add
 
@@ -103,12 +117,14 @@ class StateOfArtAlgorithm(LinkAlgorithm):
 
         left = self.communities[0]
         right = self.communities[1]
-        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(nx.non_edges(self.graph))
         non_connected_nodes = list(
-            filter(lambda x:
-                   (x[0] in right and x[1] in left)
-                   or (x[0] in left and x[1] in right),
-                   non_connected_nodes)
+            filter(
+                lambda x:
+                (x[0] in right and x[1] in left)
+                or (x[0] in left and x[1] in right),
+                non_connected_nodes
+            )
         )
 
         algorithm = None
@@ -122,7 +138,12 @@ class StateOfArtAlgorithm(LinkAlgorithm):
         elif self.algorithm == TypeOfAlgorithm.PREFERENTIAL_ATTACHMENT.value:
             algorithm = nx.preferential_attachment
 
-        edges_to_add = list(sorted(algorithm(self.graph, non_connected_nodes), key=lambda element: element[2], reverse=True))
+        edges_to_add = list(
+            sorted(
+                algorithm(self.graph, non_connected_nodes),
+                key=lambda element: element[2],
+                reverse=True)
+        )
 
         if self.k < len(edges_to_add):
             edges_to_add = islice(edges_to_add, self.k)
@@ -162,37 +183,3 @@ class RandomLink(LinkAlgorithm):
 
         for edge in edges_to_add:
             self.link_nodes(edge[0], edge[1])
-
-#
-# class AdamicAdar(LinkAlgorithm):
-#
-#     def __init__(self, graph: nx.Graph, communities: dict, k: int = 1000):
-#
-#         self.k = k
-#         super().__init__(graph, communities)
-#
-#     def prediction(self):
-#
-#         left = self.communities[0]
-#         right = self.communities[1]
-#         non_connected_nodes = nx.non_edges(self.graph)
-#         non_connected_nodes = list(
-#             filter(lambda x:
-#                    (x[0] in right and x[1] in left)
-#                    or (x[0] in left and x[1] in right),
-#                    non_connected_nodes)
-#         )
-#
-#         edges_to_add = list(sorted(nx.adamic_adar_index(self.graph, non_connected_nodes), key=lambda element: element[2], reverse=True))
-#
-#         if self.k < len(edges_to_add):
-#             edges_to_add = islice(edges_to_add, self.k)
-#             number_edges = self.k
-#         else:
-#             edges_to_add = edges_to_add
-#             number_edges = len(edges_to_add)
-#
-#         print("Adding {} edges".format(number_edges))
-#
-#         for edge in edges_to_add:
-#             self.link_nodes(edge[0], edge[1])
