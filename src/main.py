@@ -6,7 +6,7 @@ import pandas as pd
 from src.common.utility import get_filename, get_folder, write_gexf, write_communities
 from src.community.partition import CommunityDetection
 from src.controversy.measures import RandomWalkControversy, GMCK
-from src.link_prediction.algorithms import LinkWithBetweenness, StateOfArtAlgorithm
+from src.link_prediction.algorithms import LinkWithBetweenness, StateOfArtAlgorithm, HybridLinkPrediction
 
 try:
     path = sys.argv[1]
@@ -23,7 +23,7 @@ try:
 
     communities = CommunityDetection(graph=graph, algorithm="fluidc")
 
-    def gather_result(g: nx.Graph, partitions: CommunityDetection, n_edges: list, link_prediction_alg: list):
+    def gather_result(g: nx.Graph, partitions: CommunityDetection, n_edges: list, link_prediction_alg: list, hybrid: bool = True):
 
         rwc_pre = RandomWalkControversy(graph=g, communities=partitions.communities)
         gmck_pre = GMCK(graph=g, communities=partitions.communities)
@@ -49,7 +49,11 @@ try:
                 if alg == "BETWEENNESS":
                     new_graph = LinkWithBetweenness(graph=graph_copy, communities=partitions.communities, k=k)
                 else:
-                    new_graph = StateOfArtAlgorithm(graph=graph_copy, communities=partitions.communities, algorithm=alg, k=k)
+                    if hybrid:
+                        new_graph = HybridLinkPrediction(graph=graph_copy, communities=partitions.communities, algorithm=alg, k=k)
+                        alg = "BETWEENNESS + " + alg
+                    else:
+                        new_graph = StateOfArtAlgorithm(graph=graph_copy, communities=partitions.communities, algorithm=alg, k=k)
 
                 new_edges = len(new_graph.graph.edges)
                 print("Number edges after: {}".format(new_edges))
@@ -73,18 +77,22 @@ try:
 
     result = gather_result(g=graph,
                            partitions=communities,
-                           n_edges=[10,
-                                    100,
-                                    500,
-                                    1000],
-                           link_prediction_alg=["BETWEENNESS",
-                                                "JACCARD_COEFFICIENT",
-                                                "ADAMIC_ADAR",
-                                                "RESOURCE_ALLOCATION",
-                                                "PREFERENTIAL_ATTACHMENT"]
+                           n_edges=[
+                               10,
+                               100,
+                               500,
+                               1000
+                           ],
+                           link_prediction_alg=[
+                               "BETWEENNESS",
+                               "JACCARD_COEFFICIENT",
+                               "ADAMIC_ADAR",
+                               "RESOURCE_ALLOCATION",
+                               "PREFERENTIAL_ATTACHMENT"
+                           ]
                            )
 
-    result.to_csv("../data/result.csv")
+    result.to_csv("../data/result_hybridg.csv")
 
 except Exception as e:
     print("An error occurred: {}".format(e))

@@ -1,4 +1,6 @@
 # define link prediction algorithms
+import math
+from typing import List
 
 import networkx as nx
 from collections import Counter
@@ -7,6 +9,7 @@ from random import shuffle
 from src.common.utility import print_element
 from src.link_prediction.link_algorithm import LinkAlgorithm
 from itertools import islice, chain
+from collections.abc import Iterable
 
 
 @unique
@@ -39,16 +42,27 @@ class LinkWithBetweenness(LinkAlgorithm):
 
         highest_betweenness_left = highest_betweenness[0]
         highest_betweenness_right = highest_betweenness[1]
-        possible_new_edges = self.get_highest_betweenness(self.graph,
-                                                          highest_betweenness_left,
-                                                          highest_betweenness_right)
-        possible_new_edges = {k: v for k, v in sorted(possible_new_edges.items(), reverse=True)}
+        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(
+            filter(
+                lambda x:
+                (x[0] in highest_betweenness_right and x[1] in highest_betweenness_left)
+                or (x[0] in highest_betweenness_left and x[1] in highest_betweenness_right),
+                non_connected_nodes
+            )
+        )
+        possible_new_edges = self.get_highest_betweenness(
+            non_connected_nodes,
+            highest_betweenness_left,
+            highest_betweenness_right
+        )
+        possible_new_edges = {k: v for k, v in sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
 
         if self.k < len(possible_new_edges):
-            edges_to_add = islice(possible_new_edges.values(), self.k)
+            edges_to_add = islice(possible_new_edges.keys(), self.k)
             number_edges = self.k
         else:
-            edges_to_add = possible_new_edges
+            edges_to_add = possible_new_edges.keys()
             number_edges = len(possible_new_edges)
 
         print("Adding {} edges".format(number_edges))
@@ -69,35 +83,27 @@ class LinkWithBetweenness(LinkAlgorithm):
         return sorted_betweenness
 
     @staticmethod
-    def get_highest_betweenness(graph: nx.Graph, highest_b_left: dict, highest_b_right: dict):
+    def get_highest_betweenness(non_connected_nodes: Iterable, highest_b_left: dict, highest_b_right: dict):
 
         print("Getting 'best' edges")
-        non_connected_nodes = nx.non_edges(graph)
-        non_connected_nodes = list(
-            filter(
-                lambda x:
-                (x[0] in highest_b_right and x[1] in highest_b_left)
-                or (x[0] in highest_b_left and x[1] in highest_b_right),
-                non_connected_nodes
-            )
-        )
 
         frequency_nodes = Counter(chain.from_iterable(non_connected_nodes))
         edges_to_add = dict()
 
-        for nodes in non_connected_nodes:
+        for node_pairs in non_connected_nodes:
 
-            betweenness_first_node = highest_b_left[nodes[0]] if nodes[0] in highest_b_left else highest_b_right[nodes[0]]
-            # frequency_first_node = math.log(frequency_nodes[nodes[0]]) if frequency_nodes[nodes[0]] > 1 else 1
-            frequency_first_node = frequency_nodes[nodes[0]]
-            betweenness_second_node = highest_b_left[nodes[1]] if nodes[1] in highest_b_left else highest_b_right[nodes[1]]
-            # frequency_second_node = math.log(frequency_nodes[nodes[1]]) if frequency_nodes[nodes[1]] > 1 else 1
-            frequency_second_node = frequency_nodes[nodes[1]]
-            betweenness_nodes = (betweenness_first_node/frequency_first_node) + \
-                                (betweenness_second_node/frequency_second_node)
-            edges_to_add[betweenness_nodes] = nodes
+            betweenness_first_node = \
+                highest_b_left[node_pairs[0]] if node_pairs[0] in highest_b_left else highest_b_right[node_pairs[0]]
+            frequency_first_node = math.log(frequency_nodes[node_pairs[0]]) if frequency_nodes[node_pairs[0]] else 1
+            # frequency_first_node = frequency_nodes[node_pairs[0]]
+            betweenness_second_node = \
+                highest_b_left[node_pairs[1]] if node_pairs[1] in highest_b_left else highest_b_right[node_pairs[1]]
+            frequency_second_node = math.log(frequency_nodes[node_pairs[1]]) if frequency_nodes[node_pairs[1]] else 1
+            # frequency_second_node = frequency_nodes[node_pairs[1]]
+            betweenness_nodes = (betweenness_first_node / frequency_first_node) +\
+                                (betweenness_second_node / frequency_second_node)
+            edges_to_add[node_pairs] = betweenness_nodes
             # TODO log(betweenness_nodes)
-            # TODO set limit on
 
         return edges_to_add
 
@@ -162,6 +168,88 @@ class StateOfArtAlgorithm(LinkAlgorithm):
 
         for edge in edges_to_add:
             self.link_nodes(edge[0], edge[1])
+
+
+class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
+
+    def __init__(self, graph: nx.Graph, communities: dict, algorithm: str, k: int = 1000):
+
+        StateOfArtAlgorithm.__init__(self, graph=graph, communities=communities, algorithm=algorithm, k=k)
+
+    def prediction(self):
+
+        highest_betweenness = dict()
+
+        for community in self.communities:
+
+            print("Getting betweenness for community {}".format(community))
+            subgraph = nx.subgraph(self.graph, self.communities[community])
+            highest_betweenness[community] = self.get_betweenness(subgraph)
+
+        print("Betweenness done")
+
+        highest_betweenness_left = highest_betweenness[0]
+        highest_betweenness_right = highest_betweenness[1]
+        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(
+            filter(
+                lambda x:
+                (x[0] in highest_betweenness_right and x[1] in highest_betweenness_left)
+                or (x[0] in highest_betweenness_left and x[1] in highest_betweenness_right),
+                non_connected_nodes
+            )
+        )
+        ranked_betweenness_nodes = self.get_highest_betweenness(
+            non_connected_nodes,
+            highest_betweenness_left,
+            highest_betweenness_right
+        )
+
+        algorithm = None
+        print("Combining betweenness with {}".format(self.algorithm.lower()))
+        if self.algorithm.upper() == TypeOfAlgorithm.ADAMIC_ADAR.value:
+            algorithm = nx.adamic_adar_index
+        elif self.algorithm == TypeOfAlgorithm.JACCARD_COEFFICIENT.value:
+            algorithm = nx.jaccard_coefficient
+        elif self.algorithm == TypeOfAlgorithm.RESOURCE_ALLOCATION.value:
+            algorithm = nx.resource_allocation_index
+        elif self.algorithm == TypeOfAlgorithm.PREFERENTIAL_ATTACHMENT.value:
+            algorithm = nx.preferential_attachment
+
+        ranked_similarity_nodes = list(
+            sorted(
+                algorithm(self.graph, non_connected_nodes),
+                key=lambda element: element[2],
+                reverse=True)
+        )
+
+        scores = self.combine_scores(ranked_betweenness_nodes, ranked_similarity_nodes)
+        scores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)}
+
+        if self.k < len(scores):
+            edges_to_add = islice(scores.keys(), self.k)
+            number_edges = self.k
+        else:
+            edges_to_add = scores.keys()
+            number_edges = len(scores)
+
+        print("Adding {} edges".format(number_edges))
+
+        for edge in edges_to_add:
+            self.link_nodes(edge[0], edge[1])
+
+    @staticmethod
+    def combine_scores(ranked_betweenness: dict, ranked_similarity: List[tuple]):
+
+        scores = dict()
+        for nodes in ranked_similarity:
+
+            node_pairs = nodes[:2]
+            score = nodes[2]
+            betweenness = ranked_betweenness[node_pairs]
+            scores[node_pairs] = score * betweenness
+
+        return scores
 
 
 class RandomLink(LinkAlgorithm):

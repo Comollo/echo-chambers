@@ -137,7 +137,7 @@ def write_communities(communities: Dict[int, set], filename: str, path: str = ".
     print("all communities have been written")
 
 
-def write_gexf (graph: nx.Graph, filename: str, path: str = "../data/"):
+def write_gexf(graph: nx.Graph, filename: str, path: str = "../data/"):
     """
     Write graph into gexf format
 
