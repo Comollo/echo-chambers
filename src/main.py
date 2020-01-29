@@ -92,7 +92,7 @@ try:
                            ]
                            )
 
-    result.to_csv("../data/result_hybridg.csv")
+    result.to_csv("../data/result_hybrid.csv")
 
 except Exception as e:
     print("An error occurred: {}".format(e))

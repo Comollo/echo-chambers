@@ -1,7 +1,10 @@
 # define controversy measures
+import math
 
 import networkx as nx
 import random
+import numpy as np
+from scipy.sparse import coo_matrix
 from src.controversy.controversy_measure import ControversyMeasure
 from src.common.utility import border_msg, lists_to_dict
 
@@ -33,8 +36,8 @@ class RandomWalkControversy(ControversyMeasure):
         print("{} Random Walk Iteration".format(self.iteration))
         for j in range(self.iteration):
 
-            user_nodes_left = self.get_random_nodes(left_percent, left)
-            user_nodes_right = self.get_random_nodes(right_percent, right)
+            user_nodes_left = self.__get_random_nodes(left_percent, left)
+            user_nodes_right = self.__get_random_nodes(right_percent, right)
 
             user_nodes_left_list = list(user_nodes_left.keys())
             for i in range(len(user_nodes_left_list)-1):
@@ -44,7 +47,7 @@ class RandomWalkControversy(ControversyMeasure):
                 values = [1] * len(other_nodes)
                 other_nodes_dict = lists_to_dict(other_nodes, values)
 
-                side = self.perform_random_walk(graph, node, other_nodes_dict, user_nodes_right)
+                side = self.__perform_random_walk(graph, node, other_nodes_dict, user_nodes_right)
 
                 if side == "left":
                     left_left += 1
@@ -60,7 +63,7 @@ class RandomWalkControversy(ControversyMeasure):
                 values = [1] * len(other_nodes)
                 other_nodes_dict = lists_to_dict(other_nodes, values)
 
-                side = self.perform_random_walk(graph, node, user_nodes_left, other_nodes_dict)
+                side = self.__perform_random_walk(graph, node, user_nodes_left, other_nodes_dict)
 
                 if side == "left":
                     right_left += 1
@@ -78,7 +81,7 @@ class RandomWalkControversy(ControversyMeasure):
         return rwc
 
     @staticmethod
-    def get_random_nodes(k, side):
+    def __get_random_nodes(k, side):
 
         random_nodes = []
         random_nodes_dict = {}
@@ -92,7 +95,7 @@ class RandomWalkControversy(ControversyMeasure):
         return random_nodes_dict
 
     @staticmethod
-    def perform_random_walk(graph, node, left_side, right_side):
+    def __perform_random_walk(graph, node, left_side, right_side):
 
         flag = 0
         side = ""
@@ -143,7 +146,7 @@ class GMCK(ControversyMeasure):
 
         for keys in cut_nodes1.keys():
 
-            if self.satisfy_second_condition(keys, self.graph, dict_left, dict_right, cut_nodes1):
+            if self.__satisfy_second_condition(keys, self.graph, dict_left, dict_right, cut_nodes1):
                 cut_nodes[keys] = 1
 
         for edge in self.graph.edges():
@@ -220,7 +223,7 @@ class GMCK(ControversyMeasure):
         return polarization_score
 
     @staticmethod
-    def satisfy_second_condition(node1, graph: nx.Graph, dict_left, dict_right, cut):
+    def __satisfy_second_condition(node1, graph: nx.Graph, dict_left, dict_right, cut):
         # A node v in G_i has at least one edge connecting to a member of G_i which is not connected to G_j.
         neighbors = graph.neighbors(node1)
         for n in neighbors:
@@ -231,3 +234,132 @@ class GMCK(ControversyMeasure):
             if n not in cut:
                 return True
         return False
+
+
+class ForceAtlasControversy(ControversyMeasure):
+
+    def __init__(self, graph: nx.Graph, communities: dict, atlas_properties: dict = None):
+
+        if atlas_properties is None:
+            atlas_properties = {"iterations": 1000, "linlog": False, "pos": None, "nohubs": False, "k": None, "dim": 2}
+        self.position_node = self.__force_atlas2_layout(graph, atlas_properties)
+        super().__init__(graph, communities)
+
+    def get_controversy(self):
+
+        left = list(self.communities[0])
+        right = list(self.communities[1])
+        dict_left = lists_to_dict(left, [1] * len(left))
+        dict_right = lists_to_dict(right, [1] * len(right))
+
+        atlas_layout = self.position_node
+
+        dict_positions = {}
+        for i in atlas_layout:
+            node = i
+            line1 = atlas_layout[i]
+            [x, y] = [line1[0], line1[1]]
+            dict_positions[node] = [x, y]
+
+        left_list = list(dict_left.keys())
+        total_lib_lib = 0.0
+        count_lib_lib = 0.0
+
+        for i in range(len(left_list)):
+            user1 = left_list[i]
+            for j in range(i + 1, len(left_list)):
+                user2 = left_list[j]
+                dist = self.__get_distance(dict_positions[user1], dict_positions[user2])
+                total_lib_lib += dist
+                count_lib_lib += 1.0
+        avg_lib_lib = total_lib_lib / count_lib_lib
+
+        right_list = list(dict_right.keys())
+        total_cons_cons = 0.0
+        count_cons_cons = 0.0
+
+        for i in range(len(right_list)):
+            user1 = right_list[i]
+            for j in range(i + 1, len(right_list)):
+                user2 = right_list[j]
+                dist = self.__get_distance(dict_positions[user1], dict_positions[user2])
+                total_cons_cons += dist
+                count_cons_cons += 1.0
+        avg_cons_cons = total_cons_cons / count_cons_cons
+
+        total_both = 0.0
+        count_both = 0.0
+
+        for i in range(len(left_list)):
+            user1 = left_list[i]
+            for j in range(len(right_list)):
+                user2 = right_list[j]
+                dist = self.__get_distance(dict_positions[user1], dict_positions[user2])
+                total_both += dist
+                count_both += 1.0
+        avg_both = total_both / count_both
+
+        score = round(1 - ((avg_lib_lib + avg_cons_cons) / (2 * avg_both)), 2)
+        print("Score: {}".format(score))
+        return score
+
+    @staticmethod
+    def __force_atlas2_layout(graph: nx.Graph, atlas_properties: dict):
+
+        iterations = atlas_properties.get("iterations", 1000)
+        linlog = atlas_properties.get("linlog", False)
+        pos = atlas_properties.get("pos", None)
+        nohubs = atlas_properties.get("nohubs", False)
+        k = atlas_properties.get("k", None)
+        dim = atlas_properties.get("dim", 2)
+
+        for n in graph:
+            graph.node[n]['prevcs'] = 0
+            graph.node[n]['currcs'] = 0
+
+        A = nx.to_scipy_sparse_matrix(graph, dtype='f')
+        nnodes, _ = A.shape
+
+        try:
+            A = A.tolil()
+        except Exception as e:
+            A = (coo_matrix(A)).tolil()
+        if pos is None:
+            pos = np.asarray(np.random.random((nnodes, dim)), dtype=A.dtype)
+        else:
+            pos = pos.astype(A.dtype)
+        if k is None:
+            k = np.sqrt(1.0 / nnodes)
+        t = 0.1
+
+        dt = t / float(iterations + 1)
+        displacement = np.zeros((dim, nnodes))
+        for iteration in range(iterations):
+            displacement *= 0
+            for i in range(A.shape[0]):
+                delta = (pos[i] - pos).T
+                distance = np.sqrt((delta ** 2).sum(axis=0))
+                distance = np.where(distance < 0.01, 0.01, distance)
+                Ai = np.asarray(A.getrowview(i).toarray())
+                Dist = k * k / distance ** 2
+                if nohubs:
+                    Dist = Dist / float(Ai.sum(axis=1) + 1)
+                if linlog:
+                    Dist = np.log(Dist + 1)
+                displacement[:, i] += \
+                    (delta * (Dist - Ai * distance / k)).sum(axis=1)
+            length = np.sqrt((displacement ** 2).sum(axis=0))
+            length = np.where(length < 0.01, 0.01, length)
+            pos += (displacement * t / length).T
+            t -= dt
+
+        print("Force Atlas done")
+        return dict(zip(graph, pos))
+
+    @staticmethod
+    def __get_distance(pointa, pointb):
+        x1 = pointa[0]
+        y1 = pointa[1]
+        x2 = pointb[0]
+        y2 = pointb[1]
+        return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
