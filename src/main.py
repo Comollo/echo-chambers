@@ -5,7 +5,7 @@ import networkx as nx
 import pandas as pd
 from src.common.utility import get_filename, get_folder, write_gexf, write_communities
 from src.community.partition import CommunityDetection
-from src.controversy.measures import RandomWalkControversy, GMCK
+from src.controversy.measures import RandomWalkControversy, GMCK, ForceAtlasControversy, EdgeBetweennessControversy
 from src.link_prediction.algorithms import LinkWithBetweenness, StateOfArtAlgorithm, HybridLinkPrediction
 
 try:
@@ -27,6 +27,8 @@ try:
 
         rwc_pre = RandomWalkControversy(graph=g, communities=partitions.communities)
         gmck_pre = GMCK(graph=g, communities=partitions.communities)
+        force_atlas_pre = ForceAtlasControversy(graph=g, communities=partitions.communities)
+        edge_betweenness_pre = EdgeBetweennessControversy(graph = g, communities=partitions.communities)
 
         df_result = pd.DataFrame(
             columns=["Algorithm",
@@ -34,6 +36,10 @@ try:
                      "RWC_post",
                      "GMCK_pre",
                      "GMCK_post",
+                     "ForceAtlas_pre"
+                     "ForceAtlas_post"
+                     "Edge_betweenness_pre"
+                     "Edge_betweenness_post"
                      "Original_edges",
                      "New_edges",
                      "Number_edges_added"]
@@ -60,12 +66,19 @@ try:
 
                 rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=partitions.communities)
                 gmck_post = GMCK(graph=new_graph.graph, communities=partitions.communities)
+                force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=partitions.communities)
+                edge_betweenness_post = EdgeBetweennessControversy(graph=new_graph.graph, communities=partitions.communities)
+
                 df_result = df_result.append(
                     {"Algorithm": alg,
                      "RWC_pre": rwc_pre.controversy,
                      "RWC_post": rwc_post.controversy,
                      "GMCK_pre": gmck_pre.controversy,
                      "GMCK_post": gmck_post.controversy,
+                     "ForceAtlas_pre": force_atlas_pre,
+                     "ForceAtlas_post": force_atlas_post,
+                     "Edge_betweenness_pre": edge_betweenness_pre,
+                     "Edge_betweenness_post": edge_betweenness_post,
                      "Original_edges": original_edges,
                      "New_edges": new_edges,
                      "Number_edges_added": k

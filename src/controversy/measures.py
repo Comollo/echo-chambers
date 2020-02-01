@@ -30,8 +30,8 @@ class RandomWalkControversy(ControversyMeasure):
         right_right = 0
         right_left = 0
 
-        left_percent = int(percent*len(left))
-        right_percent = int(percent*len(right))
+        left_percent = int(percent * len(left))
+        right_percent = int(percent * len(right))
 
         print("{} Random Walk Iteration".format(self.iteration))
         for j in range(self.iteration):
@@ -40,10 +40,10 @@ class RandomWalkControversy(ControversyMeasure):
             user_nodes_right = self.__get_random_nodes(right_percent, right)
 
             user_nodes_left_list = list(user_nodes_left.keys())
-            for i in range(len(user_nodes_left_list)-1):
+            for i in range(len(user_nodes_left_list) - 1):
 
                 node = user_nodes_left_list[i]
-                other_nodes = user_nodes_left_list[:i] + user_nodes_left_list[i+1:]
+                other_nodes = user_nodes_left_list[:i] + user_nodes_left_list[i + 1:]
                 values = [1] * len(other_nodes)
                 other_nodes_dict = lists_to_dict(other_nodes, values)
 
@@ -56,10 +56,10 @@ class RandomWalkControversy(ControversyMeasure):
                     left_right += 1
 
             user_nodes_right_list = list(user_nodes_right.keys())
-            for i in range(len(user_nodes_right_list)-1):
+            for i in range(len(user_nodes_right_list) - 1):
 
                 node = user_nodes_right_list[i]
-                other_nodes = user_nodes_right_list[:i] + user_nodes_right_list[i+1:]
+                other_nodes = user_nodes_right_list[:i] + user_nodes_right_list[i + 1:]
                 values = [1] * len(other_nodes)
                 other_nodes_dict = lists_to_dict(other_nodes, values)
 
@@ -75,7 +75,7 @@ class RandomWalkControversy(ControversyMeasure):
         e2 = left_right / (left_right + right_right)
         e3 = right_left / (left_left + right_left)
         e4 = right_right / (left_right + right_right)
-        rwc = round(e1*e4 - e2*e3, 2)
+        rwc = round(e1 * e4 - e2 * e3, 4)
 
         border_msg("Random Walk Controversy: {}".format(rwc))
         return rwc
@@ -87,8 +87,7 @@ class RandomWalkControversy(ControversyMeasure):
         random_nodes_dict = {}
 
         for i in range(k):
-
-            random_num = random.randint(0, len(side)-1)
+            random_num = random.randint(0, len(side) - 1)
             random_nodes.append(side[random_num])
             random_nodes_dict[side[random_num]] = 1
 
@@ -104,7 +103,7 @@ class RandomWalkControversy(ControversyMeasure):
         while flag != 1:
 
             neighbors = list(graph.neighbors(starting_node))
-            random_num = random.randint(0, len(neighbors)-1)
+            random_num = random.randint(0, len(neighbors) - 1)
             starting_node = neighbors[random_num]
 
             if starting_node in left_side:
@@ -216,9 +215,9 @@ class GMCK(ControversyMeasure):
                 continue
             if dict_across[keys] == 0 and dict_internal[keys] == 0:  # there's some problem
                 print("wtf")
-            polarization_score += (dict_internal[keys]*1.0/(dict_internal[keys] + dict_across[keys]) - 0.5)
+            polarization_score += (dict_internal[keys] * 1.0 / (dict_internal[keys] + dict_across[keys]) - 0.5)
 
-        polarization_score = round(polarization_score/len(cut_nodes.keys()), 2)
+        polarization_score = round(polarization_score / len(cut_nodes.keys()), 4)
         border_msg("GMCK Controversy: {}".format(polarization_score))
         return polarization_score
 
@@ -299,7 +298,7 @@ class ForceAtlasControversy(ControversyMeasure):
                 count_both += 1.0
         avg_both = total_both / count_both
 
-        score = round(1 - ((avg_lib_lib + avg_cons_cons) / (2 * avg_both)), 2)
+        score = round(1 - ((avg_lib_lib + avg_cons_cons) / (2 * avg_both)), 4)
         print("Score: {}".format(score))
         return score
 
@@ -363,3 +362,49 @@ class ForceAtlasControversy(ControversyMeasure):
         x2 = pointb[0]
         y2 = pointb[1]
         return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
+
+
+class EdgeBetweennessControversy(ControversyMeasure):
+
+    def __init__(self, graph: nx.Graph, communities: dict):
+
+        self.edge_betweenness = nx.edge_betweenness(graph)
+        super().__init__(graph, communities)
+
+    def get_controversy(self):
+
+        left = list(self.communities[0])
+        right = list(self.communities[1])
+
+        eb_list = []
+
+        for i in left:
+            node1 = i
+            for j in right:
+                node2 = j
+                if self.graph.has_edge(node1, node2):
+                    if self.edge_betweenness.get((node1, node2)):
+                        edge_betweenness = self.edge_betweenness[(node1, node2)]
+                        eb_list.append(edge_betweenness)
+                    else:
+                        edge_betweenness = self.edge_betweenness[(node2, node1)]
+                        eb_list.append(edge_betweenness)
+
+        eb_list1 = np.asarray(eb_list)
+        eb_list2 = []
+        eb_list_all = []
+
+        for edge in self.edge_betweenness:
+            eb_list_all.append(self.edge_betweenness.get(edge))
+
+        eb_list_all1 = np.asarray(eb_list_all)
+        print("Ratio of edge betweenness", np.median(eb_list1) / np.median(eb_list_all1))
+
+        for eb in eb_list:
+            eb_list2.append(eb / np.max(eb_list1))
+
+        eb_list3 = np.asarray(eb_list2)
+        mean = np.mean(eb_list3).round(decimals=4)
+        median = np.median(eb_list3).round(decimals=4)
+        print("Mean edge betweenness on the cut {}, Median edge betweenness on the cut {}".format(mean, median))
+        return mean

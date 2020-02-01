@@ -1,7 +1,5 @@
 # define link prediction algorithms
 import math
-from typing import List
-
 import networkx as nx
 from collections import Counter
 from enum import Enum, unique
@@ -10,6 +8,7 @@ from src.common.utility import print_element
 from src.link_prediction.link_algorithm import LinkAlgorithm
 from itertools import islice, chain
 from collections.abc import Iterable
+from typing import List
 
 
 @unique
@@ -100,10 +99,10 @@ class LinkWithBetweenness(LinkAlgorithm):
                 highest_b_left[node_pairs[1]] if node_pairs[1] in highest_b_left else highest_b_right[node_pairs[1]]
             frequency_second_node = math.log(frequency_nodes[node_pairs[1]]) if frequency_nodes[node_pairs[1]] else 1
             # frequency_second_node = frequency_nodes[node_pairs[1]]
-            betweenness_nodes = (betweenness_first_node / frequency_first_node) +\
-                                (betweenness_second_node / frequency_second_node)
+            # betweenness_nodes = (betweenness_first_node / frequency_first_node) +\
+            #                     (betweenness_second_node / frequency_second_node)
+            betweenness_nodes = betweenness_first_node + betweenness_second_node
             edges_to_add[node_pairs] = betweenness_nodes
-            # TODO log(betweenness_nodes)
 
         return edges_to_add
 
