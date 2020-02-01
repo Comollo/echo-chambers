@@ -252,6 +252,86 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
         return scores
 
 
+class LinkWithEffectiveSize(LinkAlgorithm):
+
+    def __init__(self, graph:  nx.Graph(), communities: dict, k: int = 1000):
+
+        self.k = k
+        super().__init__(graph, communities)
+
+    def prediction(self):
+
+        effective_size = dict()
+
+        for community in self.communities:
+
+            print("Getting effective size for community {}".format(community))
+            subgraph = nx.subgraph(self.graph, self.communities[community])
+            effective_size[community] = self.get_effective_size(subgraph)
+
+        print("Effective size done")
+
+        effective_size_left = effective_size[0]
+        effective_size_right = effective_size[1]
+        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(
+            filter(
+                lambda x:
+                (x[0] in effective_size_right and x[1] in effective_size_left)
+                or (x[0] in effective_size_left and x[1] in effective_size_right),
+                non_connected_nodes
+            )
+        )
+        possible_new_edges = self.get_highest_effective_size(
+            non_connected_nodes,
+            effective_size_left,
+            effective_size_right
+        )
+        possible_new_edges = {k: v for k, v in sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
+
+        if self.k < len(possible_new_edges):
+            edges_to_add = islice(possible_new_edges.keys(), self.k)
+            number_edges = self.k
+        else:
+            edges_to_add = possible_new_edges.keys()
+            number_edges = len(possible_new_edges)
+
+        print("Adding {} edges".format(number_edges))
+
+        for edge in edges_to_add:
+            self.link_nodes(edge[0], edge[1])
+
+    @staticmethod
+    def get_effective_size(graph: nx.Graph()):
+        effective_size = dict(
+            filter(
+                lambda x: x[1] > 0,
+                nx.effective_size(graph).items()
+            )
+        )
+        effective_size = {k: v for k, v in sorted(effective_size.items(), key=lambda item: item[1], reverse=True)}
+        return effective_size
+
+    @staticmethod
+    def get_highest_effective_size(non_connected_nodes: Iterable, effective_size_left: dict, effective_size_right: dict):
+
+        print("Getting 'best' edges")
+
+        edges_to_add = dict()
+
+        for node_pairs in non_connected_nodes:
+
+            effective_size_first_node = \
+                effective_size_left[node_pairs[0]] if node_pairs[0] in effective_size_left else effective_size_right[node_pairs[0]]
+            effective_size_second_node = \
+                effective_size_left[node_pairs[1]] if node_pairs[1] in effective_size_left else effective_size_right[node_pairs[1]]
+            betweenness_nodes = effective_size_first_node + effective_size_second_node
+            edges_to_add[node_pairs] = betweenness_nodes
+
+        return edges_to_add
+        # TODO use efficiency instead of effective size
+
+
 class RandomLink(LinkAlgorithm):
 
     def __init__(self, graph: nx.Graph, communities: dict, k: int = 1000):
