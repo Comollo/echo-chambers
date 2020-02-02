@@ -13,7 +13,6 @@ from typing import List
 
 @unique
 class TypeOfAlgorithm(Enum):
-
     JACCARD_COEFFICIENT = "JACCARD_COEFFICIENT"
     ADAMIC_ADAR = "ADAMIC_ADAR"
     RESOURCE_ALLOCATION = "RESOURCE_ALLOCATION"
@@ -32,16 +31,16 @@ class LinkWithBetweenness(LinkAlgorithm):
         highest_betweenness = dict()
 
         for community in self.communities:
-
             print("Getting betweenness for community {}".format(community))
             subgraph = nx.subgraph(self.graph, self.communities[community])
-            highest_betweenness[community] = self.get_betweenness(subgraph)
+            highest_betweenness[community] = self.__get_betweenness(subgraph)
 
         print("Betweenness done")
 
         highest_betweenness_left = highest_betweenness[0]
         highest_betweenness_right = highest_betweenness[1]
-        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(nx.non_edges(self.graph))
+        n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
             filter(
                 lambda x:
@@ -50,12 +49,13 @@ class LinkWithBetweenness(LinkAlgorithm):
                 non_connected_nodes
             )
         )
-        possible_new_edges = self.get_highest_betweenness(
+        possible_new_edges = self.__get_highest_betweenness(
             non_connected_nodes,
             highest_betweenness_left,
             highest_betweenness_right
         )
-        possible_new_edges = {k: v for k, v in sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
+        possible_new_edges = {k: v for k, v in
+                              sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
 
         if self.k < len(possible_new_edges):
             edges_to_add = islice(possible_new_edges.keys(), self.k)
@@ -64,13 +64,14 @@ class LinkWithBetweenness(LinkAlgorithm):
             edges_to_add = possible_new_edges.keys()
             number_edges = len(possible_new_edges)
 
+        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
             self.link_nodes(edge[0], edge[1])
 
     @staticmethod
-    def get_betweenness(graph: nx.Graph):
+    def __get_betweenness(graph: nx.Graph):
 
         betweenness = dict(
             filter(
@@ -82,7 +83,7 @@ class LinkWithBetweenness(LinkAlgorithm):
         return sorted_betweenness
 
     @staticmethod
-    def get_highest_betweenness(non_connected_nodes: Iterable, highest_b_left: dict, highest_b_right: dict):
+    def __get_highest_betweenness(non_connected_nodes: Iterable, highest_b_left: dict, highest_b_right: dict):
 
         print("Getting 'best' edges")
 
@@ -90,7 +91,6 @@ class LinkWithBetweenness(LinkAlgorithm):
         edges_to_add = dict()
 
         for node_pairs in non_connected_nodes:
-
             betweenness_first_node = \
                 highest_b_left[node_pairs[0]] if node_pairs[0] in highest_b_left else highest_b_right[node_pairs[0]]
             frequency_first_node = math.log(frequency_nodes[node_pairs[0]]) if frequency_nodes[node_pairs[0]] else 1
@@ -129,6 +129,7 @@ class StateOfArtAlgorithm(LinkAlgorithm):
         left = self.communities[0]
         right = self.communities[1]
         non_connected_nodes = list(nx.non_edges(self.graph))
+        n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
             filter(
                 lambda x:
@@ -163,6 +164,7 @@ class StateOfArtAlgorithm(LinkAlgorithm):
             edges_to_add = edges_to_add
             number_edges = len(edges_to_add)
 
+        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -180,16 +182,16 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
         highest_betweenness = dict()
 
         for community in self.communities:
-
             print("Getting betweenness for community {}".format(community))
             subgraph = nx.subgraph(self.graph, self.communities[community])
-            highest_betweenness[community] = self.get_betweenness(subgraph)
+            highest_betweenness[community] = self.__get_betweenness(subgraph)
 
         print("Betweenness done")
 
         highest_betweenness_left = highest_betweenness[0]
         highest_betweenness_right = highest_betweenness[1]
-        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(nx.non_edges(self.graph))
+        n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
             filter(
                 lambda x:
@@ -198,7 +200,7 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
                 non_connected_nodes
             )
         )
-        ranked_betweenness_nodes = self.get_highest_betweenness(
+        ranked_betweenness_nodes = self.__get_highest_betweenness(
             non_connected_nodes,
             highest_betweenness_left,
             highest_betweenness_right
@@ -232,6 +234,7 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
             edges_to_add = scores.keys()
             number_edges = len(scores)
 
+        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -242,7 +245,6 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
 
         scores = dict()
         for nodes in ranked_similarity:
-
             node_pairs = nodes[:2]
             score = nodes[2]
             betweenness = ranked_betweenness[node_pairs]
@@ -251,9 +253,10 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
         return scores
 
 
+# not used
 class LinkWithEffectiveSize(LinkAlgorithm):
 
-    def __init__(self, graph:  nx.Graph(), communities: dict, k: int = 1000):
+    def __init__(self, graph: nx.Graph(), communities: dict, k: int = 1000):
 
         self.k = k
         super().__init__(graph, communities)
@@ -263,16 +266,16 @@ class LinkWithEffectiveSize(LinkAlgorithm):
         effective_size = dict()
 
         for community in self.communities:
-
             print("Getting effective size for community {}".format(community))
             subgraph = nx.subgraph(self.graph, self.communities[community])
-            effective_size[community] = self.get_effective_size(subgraph)
+            effective_size[community] = self.__get_effective_size(subgraph)
 
         print("Effective size done")
 
         effective_size_left = effective_size[0]
         effective_size_right = effective_size[1]
-        non_connected_nodes = nx.non_edges(self.graph)
+        non_connected_nodes = list(nx.non_edges(self.graph))
+        n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
             filter(
                 lambda x:
@@ -281,12 +284,13 @@ class LinkWithEffectiveSize(LinkAlgorithm):
                 non_connected_nodes
             )
         )
-        possible_new_edges = self.get_highest_effective_size(
+        possible_new_edges = self.__get_highest_effective_size(
             non_connected_nodes,
             effective_size_left,
             effective_size_right
         )
-        possible_new_edges = {k: v for k, v in sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
+        possible_new_edges = {k: v for k, v in
+                              sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
 
         if self.k < len(possible_new_edges):
             edges_to_add = islice(possible_new_edges.keys(), self.k)
@@ -295,13 +299,14 @@ class LinkWithEffectiveSize(LinkAlgorithm):
             edges_to_add = possible_new_edges.keys()
             number_edges = len(possible_new_edges)
 
+        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
             self.link_nodes(edge[0], edge[1])
 
     @staticmethod
-    def get_effective_size(graph: nx.Graph()):
+    def __get_effective_size(graph: nx.Graph()):
         effective_size = dict(
             filter(
                 lambda x: x[1] > 0,
@@ -312,18 +317,20 @@ class LinkWithEffectiveSize(LinkAlgorithm):
         return effective_size
 
     @staticmethod
-    def get_highest_effective_size(non_connected_nodes: Iterable, effective_size_left: dict, effective_size_right: dict):
+    def __get_highest_effective_size(non_connected_nodes: Iterable, effective_size_left: dict,
+                                     effective_size_right: dict):
 
         print("Getting 'best' edges")
 
         edges_to_add = dict()
 
         for node_pairs in non_connected_nodes:
-
             effective_size_first_node = \
-                effective_size_left[node_pairs[0]] if node_pairs[0] in effective_size_left else effective_size_right[node_pairs[0]]
+                effective_size_left[node_pairs[0]] if node_pairs[0] in effective_size_left else effective_size_right[
+                    node_pairs[0]]
             effective_size_second_node = \
-                effective_size_left[node_pairs[1]] if node_pairs[1] in effective_size_left else effective_size_right[node_pairs[1]]
+                effective_size_left[node_pairs[1]] if node_pairs[1] in effective_size_left else effective_size_right[
+                    node_pairs[1]]
             betweenness_nodes = effective_size_first_node + effective_size_second_node
             edges_to_add[node_pairs] = betweenness_nodes
 
@@ -331,15 +338,14 @@ class LinkWithEffectiveSize(LinkAlgorithm):
         # TODO use efficiency instead of effective size
 
 
+# not used
 class RandomLink(LinkAlgorithm):
 
     def __init__(self, graph: nx.Graph, communities: dict, k: int = 1000):
-
         self.k = k
         super().__init__(graph, communities)
 
     def prediction(self):
-
         left = self.communities[0]
         right = self.communities[1]
         non_connected_nodes = nx.non_edges(self.graph)

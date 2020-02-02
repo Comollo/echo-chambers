@@ -218,7 +218,7 @@ class GMCK(ControversyMeasure):
             polarization_score += (dict_internal[keys] * 1.0 / (dict_internal[keys] + dict_across[keys]) - 0.5)
 
         polarization_score = round(polarization_score / len(cut_nodes.keys()), 4)
-        border_msg("GMCK Controversy: {}".format(polarization_score))
+        border_msg("GMCK controversy - boundary connectivity: {}".format(polarization_score))
         return polarization_score
 
     @staticmethod
@@ -299,22 +299,19 @@ class ForceAtlasControversy(ControversyMeasure):
         avg_both = total_both / count_both
 
         score = round(1 - ((avg_lib_lib + avg_cons_cons) / (2 * avg_both)), 4)
-        print("Score: {}".format(score))
+        print("Embedding score: {}".format(score))
         return score
 
     @staticmethod
     def __force_atlas2_layout(graph: nx.Graph, atlas_properties: dict):
 
+        print("Start creating Force Atlas Layout")
         iterations = atlas_properties.get("iterations", 1000)
         linlog = atlas_properties.get("linlog", False)
         pos = atlas_properties.get("pos", None)
         nohubs = atlas_properties.get("nohubs", False)
         k = atlas_properties.get("k", None)
         dim = atlas_properties.get("dim", 2)
-
-        for n in graph:
-            graph.node[n]['prevcs'] = 0
-            graph.node[n]['currcs'] = 0
 
         A = nx.to_scipy_sparse_matrix(graph, dtype='f')
         nnodes, _ = A.shape
@@ -340,13 +337,13 @@ class ForceAtlasControversy(ControversyMeasure):
                 distance = np.sqrt((delta ** 2).sum(axis=0))
                 distance = np.where(distance < 0.01, 0.01, distance)
                 Ai = np.asarray(A.getrowview(i).toarray())
-                Dist = k * k / distance ** 2
+                dist = k * k / distance ** 2
                 if nohubs:
-                    Dist = Dist / float(Ai.sum(axis=1) + 1)
+                    dist = dist / float(Ai.sum(axis=1) + 1)
                 if linlog:
-                    Dist = np.log(Dist + 1)
+                    dist = np.log(dist + 1)
                 displacement[:, i] += \
-                    (delta * (Dist - Ai * distance / k)).sum(axis=1)
+                    (delta * (dist - Ai * distance / k)).sum(axis=1)
             length = np.sqrt((displacement ** 2).sum(axis=0))
             length = np.where(length < 0.01, 0.01, length)
             pos += (displacement * t / length).T
@@ -356,11 +353,11 @@ class ForceAtlasControversy(ControversyMeasure):
         return dict(zip(graph, pos))
 
     @staticmethod
-    def __get_distance(pointa, pointb):
-        x1 = pointa[0]
-        y1 = pointa[1]
-        x2 = pointb[0]
-        y2 = pointb[1]
+    def __get_distance(point_a, point_b):
+        x1 = point_a[0]
+        y1 = point_a[1]
+        x2 = point_b[0]
+        y2 = point_b[1]
         return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 

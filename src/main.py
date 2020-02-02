@@ -28,7 +28,6 @@ try:
         rwc_pre = RandomWalkControversy(graph=g, communities=partitions.communities)
         gmck_pre = GMCK(graph=g, communities=partitions.communities)
         force_atlas_pre = ForceAtlasControversy(graph=g, communities=partitions.communities)
-        edge_betweenness_pre = EdgeBetweennessControversy(graph = g, communities=partitions.communities)
 
         df_result = pd.DataFrame(
             columns=["Algorithm",
@@ -36,10 +35,8 @@ try:
                      "RWC_post",
                      "GMCK_pre",
                      "GMCK_post",
-                     "ForceAtlas_pre"
-                     "ForceAtlas_post"
-                     "Edge_betweenness_pre"
-                     "Edge_betweenness_post"
+                     "ForceAtlas_pre",
+                     "ForceAtlas_post",
                      "Original_edges",
                      "New_edges",
                      "Number_edges_added"]
@@ -67,7 +64,6 @@ try:
                 rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=partitions.communities)
                 gmck_post = GMCK(graph=new_graph.graph, communities=partitions.communities)
                 force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=partitions.communities)
-                edge_betweenness_post = EdgeBetweennessControversy(graph=new_graph.graph, communities=partitions.communities)
 
                 df_result = df_result.append(
                     {"Algorithm": alg,
@@ -75,10 +71,8 @@ try:
                      "RWC_post": rwc_post.controversy,
                      "GMCK_pre": gmck_pre.controversy,
                      "GMCK_post": gmck_post.controversy,
-                     "ForceAtlas_pre": force_atlas_pre,
-                     "ForceAtlas_post": force_atlas_post,
-                     "Edge_betweenness_pre": edge_betweenness_pre,
-                     "Edge_betweenness_post": edge_betweenness_post,
+                     "ForceAtlas_pre": force_atlas_pre.controversy,
+                     "ForceAtlas_post": force_atlas_post.controversy,
                      "Original_edges": original_edges,
                      "New_edges": new_edges,
                      "Number_edges_added": k
@@ -91,9 +85,6 @@ try:
     result = gather_result(g=graph,
                            partitions=communities,
                            n_edges=[
-                               10,
-                               100,
-                               500,
                                1000
                            ],
                            link_prediction_alg=[
@@ -102,10 +93,11 @@ try:
                                "ADAMIC_ADAR",
                                "RESOURCE_ALLOCATION",
                                "PREFERENTIAL_ATTACHMENT"
-                           ]
+                           ],
+                           hybrid=True
                            )
 
-    result.to_csv("../data/result_hybrid.csv")
+    result.to_csv("../data/result_hybrid_1.csv")
 
 except Exception as e:
     print("An error occurred: {}".format(e))
