@@ -1,13 +1,12 @@
 # define controversy measures
 import math
-from operator import itemgetter
-
 import networkx as nx
 import random
 import numpy as np
 from scipy.sparse import coo_matrix
 from src.controversy.controversy_measure import ControversyMeasure
 from src.common.utility import border_msg, lists_to_dict
+from operator import itemgetter
 
 
 class RandomWalkControversy(ControversyMeasure):
@@ -37,8 +36,11 @@ class RandomWalkControversy(ControversyMeasure):
         print("{} Random Walk Iteration".format(self.iteration))
         for j in range(self.iteration):
 
-            user_nodes_left = self.__get_random_nodes(left_percent, left)
-            user_nodes_right = self.__get_random_nodes(right_percent, right)
+            # user_nodes_left = self.__get_random_nodes(left_percent, left)
+            # user_nodes_right = self.__get_random_nodes(right_percent, right)
+
+            user_nodes_left = self.__get_random_nodes_with_highest_degree(left, left_percent)
+            user_nodes_right = self.__get_random_nodes_with_highest_degree(right, right_percent)
 
             user_nodes_left_list = list(user_nodes_left.keys())
             for i in range(len(user_nodes_left_list) - 1):
@@ -81,21 +83,24 @@ class RandomWalkControversy(ControversyMeasure):
         border_msg("Random Walk Controversy: {}".format(rwc))
         return rwc
 
-    def __get_random_nodes_with_highest_degree(self, k: int, side: dict):
+    def __get_random_nodes_with_highest_degree(self, side: list, k: int = 10):
 
+        dict_side: dict = dict((k, 1) for k in side)
         random_nodes = {}
         dict_degrees = {}
         for node in self.graph.nodes():
             dict_degrees[node] = self.graph.degree(node)
         sorted_dict = sorted(dict_degrees.items(), key=itemgetter(1), reverse=True)
         count = 0
+
         for i in sorted_dict:
             if count > k:
                 break
-            if side.get(i):
+            if not dict_side.get(i[0]):
                 continue
             random_nodes[i[0]] = i[1]
             count += 1
+
         return random_nodes
 
     @staticmethod
@@ -379,6 +384,7 @@ class ForceAtlasControversy(ControversyMeasure):
         return math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
 
 
+# not used
 class EdgeBetweennessControversy(ControversyMeasure):
 
     def __init__(self, graph: nx.Graph, communities: dict):

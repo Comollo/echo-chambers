@@ -5,7 +5,7 @@ import networkx as nx
 import pandas as pd
 from src.common.utility import get_filename, get_folder, write_gexf, write_communities
 from src.community.partition import CommunityDetection
-from src.controversy.measures import RandomWalkControversy, GMCK, ForceAtlasControversy, EdgeBetweennessControversy
+from src.controversy.measures import RandomWalkControversy, GMCK, ForceAtlasControversy
 from src.link_prediction.algorithms import LinkWithBetweenness, StateOfArtAlgorithm, HybridLinkPrediction
 
 try:
