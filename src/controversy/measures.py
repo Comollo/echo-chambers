@@ -1,5 +1,6 @@
 # define controversy measures
 import math
+from operator import itemgetter
 
 import networkx as nx
 import random
@@ -79,6 +80,23 @@ class RandomWalkControversy(ControversyMeasure):
 
         border_msg("Random Walk Controversy: {}".format(rwc))
         return rwc
+
+    def __get_random_nodes_with_highest_degree(self, k: int, side: dict):
+
+        random_nodes = {}
+        dict_degrees = {}
+        for node in self.graph.nodes():
+            dict_degrees[node] = self.graph.degree(node)
+        sorted_dict = sorted(dict_degrees.items(), key=itemgetter(1), reverse=True)
+        count = 0
+        for i in sorted_dict:
+            if count > k:
+                break
+            if side.get(i):
+                continue
+            random_nodes[i[0]] = i[1]
+            count += 1
+        return random_nodes
 
     @staticmethod
     def __get_random_nodes(k, side):
