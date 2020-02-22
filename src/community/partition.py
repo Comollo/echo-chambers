@@ -1,21 +1,21 @@
 # define functions to partition a graph
 
-import networkx as nx
 from enum import Enum, unique
-from networkx.algorithms import community
-from src.common.utility import print_element
 from typing import Dict
+
+import networkx as nx
+from networkx.algorithms import community
+
+from src.common.utility import print_element
 
 
 @unique
 class Algorithm(Enum):
-
     KERNIGHAN_LIN = "KERNIGHAN-LIN"
     FLUIDC = "FLUIDC"
 
 
 class CommunityDetection:
-
     algorithms = [Algorithm.KERNIGHAN_LIN.value,
                   Algorithm.FLUIDC.value]
 

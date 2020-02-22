@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Dict
+
 from networkx import Graph
 
 

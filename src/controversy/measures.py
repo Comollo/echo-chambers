@@ -1,12 +1,14 @@
 # define controversy measures
 import math
-import networkx as nx
 import random
+from operator import itemgetter
+
+import networkx as nx
 import numpy as np
 from scipy.sparse import coo_matrix
+
+from src.common.utility import lists_to_dict, border_msg
 from src.controversy.controversy_measure import ControversyMeasure
-from src.common.utility import border_msg, lists_to_dict
-from operator import itemgetter
 
 
 class RandomWalkControversy(ControversyMeasure):

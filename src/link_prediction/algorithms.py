@@ -1,14 +1,16 @@
 # define link prediction algorithms
 import math
-import networkx as nx
 from collections import Counter
+from collections.abc import Iterable
 from enum import Enum, unique
+from itertools import islice, chain
 from random import shuffle
+from typing import List
+
+import networkx as nx
+
 from src.common.utility import print_element
 from src.link_prediction.link_algorithm import LinkAlgorithm
-from itertools import islice, chain
-from collections.abc import Iterable
-from typing import List
 
 
 @unique
@@ -64,7 +66,7 @@ class LinkWithBetweenness(LinkAlgorithm):
             edges_to_add = possible_new_edges.keys()
             number_edges = len(possible_new_edges)
 
-        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
+        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -108,7 +110,6 @@ class LinkWithBetweenness(LinkAlgorithm):
 
 
 class StateOfArtAlgorithm(LinkAlgorithm):
-
     algorithms = [TypeOfAlgorithm.JACCARD_COEFFICIENT.value,
                   TypeOfAlgorithm.ADAMIC_ADAR.value,
                   TypeOfAlgorithm.RESOURCE_ALLOCATION.value,
@@ -164,7 +165,7 @@ class StateOfArtAlgorithm(LinkAlgorithm):
             edges_to_add = edges_to_add
             number_edges = len(edges_to_add)
 
-        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
+        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -184,7 +185,7 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
         for community in self.communities:
             print("Getting betweenness for community {}".format(community))
             subgraph = nx.subgraph(self.graph, self.communities[community])
-            highest_betweenness[community] = self.__get_betweenness(subgraph)
+            highest_betweenness[community] = self._LinkWithBetweenness__get_betweenness(subgraph)
 
         print("Betweenness done")
 
@@ -200,7 +201,7 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
                 non_connected_nodes
             )
         )
-        ranked_betweenness_nodes = self.__get_highest_betweenness(
+        ranked_betweenness_nodes = self._LinkWithBetweenness__get_highest_betweenness(
             non_connected_nodes,
             highest_betweenness_left,
             highest_betweenness_right
@@ -224,7 +225,7 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
                 reverse=True)
         )
 
-        scores = self.combine_scores(ranked_betweenness_nodes, ranked_similarity_nodes)
+        scores = self.__combine_scores(ranked_betweenness_nodes, ranked_similarity_nodes)
         scores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)}
 
         if self.k < len(scores):
@@ -234,14 +235,14 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
             edges_to_add = scores.keys()
             number_edges = len(scores)
 
-        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
+        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
             self.link_nodes(edge[0], edge[1])
 
     @staticmethod
-    def combine_scores(ranked_betweenness: dict, ranked_similarity: List[tuple]):
+    def __combine_scores(ranked_betweenness: dict, ranked_similarity: List[tuple]):
 
         scores = dict()
         for nodes in ranked_similarity:
@@ -299,7 +300,7 @@ class LinkWithEffectiveSize(LinkAlgorithm):
             edges_to_add = possible_new_edges.keys()
             number_edges = len(possible_new_edges)
 
-        print("% of edges added: {}".format(round(number_edges/n_possible_new_connections, 4)))
+        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:

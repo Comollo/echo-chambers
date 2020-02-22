@@ -1,9 +1,10 @@
 # define some common useful functions
 
 import os
+from typing import Dict
+
 import networkx as nx
 import numpy as np
-from typing import Dict
 from matplotlib import pyplot as plt
 
 
@@ -161,6 +162,7 @@ def write_gexf(graph: nx.Graph, filename: str, path: str = "../data/"):
 def plot_histogram(values: list, bins: int, title: str):
     """
     Plot histogram using matplotlib
+
     Parameter
     ---------
     values : list
