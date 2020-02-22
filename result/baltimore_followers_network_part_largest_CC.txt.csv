@@ -1,2 +1,0 @@
-,Algorithm,RWC_pre,RWC_post,GMCK_pre,GMCK_post,ForceAtlas_pre,ForceAtlas_post,Original_edges,New_edges,Number_edges_added
-0,BETWEENNESS + JACCARD_COEFFICIENT,0.8277,0.6747,0.2723,0.0827,1,1,28291,29291,1000

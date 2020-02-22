@@ -46,7 +46,8 @@ try:
                          hybrid=True
                          )
 
-        result.to_csv("../result/" + file + ".csv")
+        filename = file.split(".")[0]
+        result.to_csv("../result/" + filename + ".csv")
 
 except Exception as e:
     print("An error occurred: {}".format(e))
