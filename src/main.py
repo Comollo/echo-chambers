@@ -43,7 +43,7 @@ try:
                              "RESOURCE_ALLOCATION",
                              "PREFERENTIAL_ATTACHMENT"
                          ],
-                         hybrid=True
+                         hybrid=False
                          )
 
         filename = file.split(".")[0]

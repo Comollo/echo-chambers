@@ -3,7 +3,7 @@
 import networkx as nx
 import pandas as pd
 
-from src.controversy.measures import RandomWalkControversy, GMCK
+from src.controversy.measures import RandomWalkControversy, GMCK, ForceAtlasControversy
 from src.link_prediction.algorithms import LinkWithBetweenness, HybridLinkPrediction, StateOfArtAlgorithm
 
 
@@ -21,7 +21,7 @@ def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: 
     """
     rwc_pre = RandomWalkControversy(graph=g, communities=communities)
     gmck_pre = GMCK(graph=g, communities=communities)
-    # force_atlas_pre = ForceAtlasControversy(graph=g, communities=communities)
+    force_atlas_pre = ForceAtlasControversy(graph=g, communities=communities)
 
     df_result = pd.DataFrame(
         columns=["Algorithm",
@@ -59,7 +59,7 @@ def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: 
 
             rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=communities)
             gmck_post = GMCK(graph=new_graph.graph, communities=communities)
-            # force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=communities)
+            force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=communities)
 
             df_result = df_result.append(
                 {"Algorithm": alg,
@@ -67,8 +67,8 @@ def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: 
                  "RWC_post": rwc_post.controversy,
                  "GMCK_pre": gmck_pre.controversy,
                  "GMCK_post": gmck_post.controversy,
-                 "ForceAtlas_pre": 1,  # force_atlas_pre.controversy,
-                 "ForceAtlas_post": 1,  # force_atlas_post.controversy,
+                 "ForceAtlas_pre": force_atlas_pre.controversy,
+                 "ForceAtlas_post": force_atlas_post.controversy,
                  "Original_edges": original_edges,
                  "New_edges": new_edges,
                  "Number_edges_added": k
