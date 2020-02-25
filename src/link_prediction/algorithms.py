@@ -267,11 +267,13 @@ class LinkWithEffectiveSize(LinkAlgorithm):
     def prediction(self):
 
         effective_size = dict()
+        efficiency = dict()
 
         for community in self.communities:
             print("Getting effective size for community {}".format(community))
             subgraph = nx.subgraph(self.graph, self.communities[community])
             effective_size[community] = self.__get_effective_size(subgraph)
+            # efficiency[community] = self.__get_efficiency(subgraph, effective_size[community])
 
         print("Effective size done")
 
@@ -287,7 +289,7 @@ class LinkWithEffectiveSize(LinkAlgorithm):
                 non_connected_nodes
             )
         )
-        possible_new_edges = self.__get_highest_effective_size(
+        possible_new_edges = self.__get_highest_holes_measure(
             non_connected_nodes,
             effective_size_left,
             effective_size_right
@@ -320,25 +322,30 @@ class LinkWithEffectiveSize(LinkAlgorithm):
         return effective_size
 
     @staticmethod
-    def __get_highest_effective_size(non_connected_nodes: Iterable, effective_size_left: dict,
-                                     effective_size_right: dict):
+    def __get_efficiency(graph:nx.Graph(), effective_size: dict):
+        efficiency = {n: v / graph.degree(n) for n, v in effective_size.items()}
+        efficiency = {k: v for k, v in sorted(efficiency.items(), key=lambda item: item[1], reverse=True)}
+        return efficiency
+
+    @staticmethod
+    def __get_highest_holes_measure(non_connected_nodes: Iterable, holes_measure_left: dict,
+                                    holes_measure_right: dict):
 
         print("Getting 'best' edges")
 
         edges_to_add = dict()
 
         for node_pairs in non_connected_nodes:
-            effective_size_first_node = \
-                effective_size_left[node_pairs[0]] if node_pairs[0] in effective_size_left else effective_size_right[
+            holes_measure_first_node = \
+                holes_measure_left[node_pairs[0]] if node_pairs[0] in holes_measure_left else holes_measure_right[
                     node_pairs[0]]
-            effective_size_second_node = \
-                effective_size_left[node_pairs[1]] if node_pairs[1] in effective_size_left else effective_size_right[
+            holes_measure_second_node = \
+                holes_measure_left[node_pairs[1]] if node_pairs[1] in holes_measure_left else holes_measure_right[
                     node_pairs[1]]
-            betweenness_nodes = effective_size_first_node + effective_size_second_node
-            edges_to_add[node_pairs] = betweenness_nodes
+            holes_measure_nodes = holes_measure_first_node + holes_measure_second_node
+            edges_to_add[node_pairs] = holes_measure_nodes
 
         return edges_to_add
-        # TODO use efficiency instead of effective size
 
 
 # not used
