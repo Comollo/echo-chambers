@@ -95,11 +95,13 @@ class LinkWithBetweenness(LinkAlgorithm):
         for node_pairs in non_connected_nodes:
             betweenness_first_node = \
                 highest_b_left[node_pairs[0]] if node_pairs[0] in highest_b_left else highest_b_right[node_pairs[0]]
-            frequency_first_node = math.log(frequency_nodes[node_pairs[0]]) if frequency_nodes[node_pairs[0]] else 1
+            # frequency_first_node = \
+            #     math.log(frequency_nodes[node_pairs[0]]) if frequency_nodes[node_pairs[0]] > 1 else 1
             # frequency_first_node = frequency_nodes[node_pairs[0]]
             betweenness_second_node = \
                 highest_b_left[node_pairs[1]] if node_pairs[1] in highest_b_left else highest_b_right[node_pairs[1]]
-            frequency_second_node = math.log(frequency_nodes[node_pairs[1]]) if frequency_nodes[node_pairs[1]] else 1
+            # frequency_second_node = \
+            #     math.log(frequency_nodes[node_pairs[1]]) if frequency_nodes[node_pairs[1]] > 1 else 1
             # frequency_second_node = frequency_nodes[node_pairs[1]]
             # betweenness_nodes = (betweenness_first_node / frequency_first_node) +\
             #                     (betweenness_second_node / frequency_second_node)
