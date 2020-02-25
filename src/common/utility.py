@@ -112,7 +112,7 @@ def lists_to_dict(keys: list, values: list):
     return keys_and_values
 
 
-def write_communities(communities: Dict[int, set], filename: str, path: str = "../data/"):
+def write_communities(communities: Dict[int, set], filename: str, path: str = "../community/"):
     """
     Write nodes to txt
 
