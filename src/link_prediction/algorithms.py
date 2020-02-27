@@ -1,5 +1,4 @@
 # define link prediction algorithms
-import math
 from collections import Counter
 from collections.abc import Iterable
 from enum import Enum, unique
@@ -66,7 +65,8 @@ class LinkWithBetweenness(LinkAlgorithm):
             edges_to_add = possible_new_edges.keys()
             number_edges = len(possible_new_edges)
 
-        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
+        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -167,7 +167,8 @@ class StateOfArtAlgorithm(LinkAlgorithm):
             edges_to_add = edges_to_add
             number_edges = len(edges_to_add)
 
-        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
+        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -237,7 +238,8 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
             edges_to_add = scores.keys()
             number_edges = len(scores)
 
-        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
+        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -256,8 +258,7 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
         return scores
 
 
-# not used
-class LinkWithEffectiveSize(LinkAlgorithm):
+class LinkWithStructuralHoles(LinkAlgorithm):
 
     def __init__(self, graph: nx.Graph(), communities: dict, k: int = 1000):
 
@@ -267,13 +268,11 @@ class LinkWithEffectiveSize(LinkAlgorithm):
     def prediction(self):
 
         effective_size = dict()
-        efficiency = dict()
 
         for community in self.communities:
             print("Getting effective size for community {}".format(community))
             subgraph = nx.subgraph(self.graph, self.communities[community])
             effective_size[community] = self.__get_effective_size(subgraph)
-            # efficiency[community] = self.__get_efficiency(subgraph, effective_size[community])
 
         print("Effective size done")
 
@@ -289,7 +288,7 @@ class LinkWithEffectiveSize(LinkAlgorithm):
                 non_connected_nodes
             )
         )
-        possible_new_edges = self.__get_highest_holes_measure(
+        possible_new_edges = self.__get_highest_values(
             non_connected_nodes,
             effective_size_left,
             effective_size_right
@@ -304,7 +303,8 @@ class LinkWithEffectiveSize(LinkAlgorithm):
             edges_to_add = possible_new_edges.keys()
             number_edges = len(possible_new_edges)
 
-        print("% of edges added: {}".format(round(number_edges / n_possible_new_connections, 4)))
+        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
         for edge in edges_to_add:
@@ -322,28 +322,28 @@ class LinkWithEffectiveSize(LinkAlgorithm):
         return effective_size
 
     @staticmethod
-    def __get_efficiency(graph:nx.Graph(), effective_size: dict):
+    def __get_efficiency(graph: nx.Graph(), effective_size: dict):
         efficiency = {n: v / graph.degree(n) for n, v in effective_size.items()}
         efficiency = {k: v for k, v in sorted(efficiency.items(), key=lambda item: item[1], reverse=True)}
         return efficiency
 
     @staticmethod
-    def __get_highest_holes_measure(non_connected_nodes: Iterable, holes_measure_left: dict,
-                                    holes_measure_right: dict):
+    def __get_highest_values(non_connected_nodes: Iterable, values_left: dict,
+                             values_right: dict):
 
         print("Getting 'best' edges")
 
         edges_to_add = dict()
 
         for node_pairs in non_connected_nodes:
-            holes_measure_first_node = \
-                holes_measure_left[node_pairs[0]] if node_pairs[0] in holes_measure_left else holes_measure_right[
+            values_first_node = \
+                values_left[node_pairs[0]] if node_pairs[0] in values_left else values_right[
                     node_pairs[0]]
-            holes_measure_second_node = \
-                holes_measure_left[node_pairs[1]] if node_pairs[1] in holes_measure_left else holes_measure_right[
+            values_second_node = \
+                values_left[node_pairs[1]] if node_pairs[1] in values_left else values_right[
                     node_pairs[1]]
-            holes_measure_nodes = holes_measure_first_node + holes_measure_second_node
-            edges_to_add[node_pairs] = holes_measure_nodes
+            values_pair_nodes = values_first_node + values_second_node
+            edges_to_add[node_pairs] = values_pair_nodes
 
         return edges_to_add
 

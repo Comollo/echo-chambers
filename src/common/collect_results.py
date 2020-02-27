@@ -4,7 +4,8 @@ import networkx as nx
 import pandas as pd
 
 from src.controversy.measures import RandomWalkControversy, GMCK, ForceAtlasControversy
-from src.link_prediction.algorithms import LinkWithBetweenness, HybridLinkPrediction, StateOfArtAlgorithm
+from src.link_prediction.algorithms import LinkWithBetweenness, HybridLinkPrediction, StateOfArtAlgorithm, \
+    LinkWithStructuralHoles
 
 
 def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: list,
@@ -33,7 +34,8 @@ def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: 
                  "ForceAtlas_post",
                  "Original_edges",
                  "New_edges",
-                 "Number_edges_added"]
+                 "Number_edges_added",
+                 "Percentage_edges_added"]
     )
 
     for k in n_edges:
@@ -45,6 +47,8 @@ def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: 
 
             if alg == "BETWEENNESS":
                 new_graph = LinkWithBetweenness(graph=graph_copy, communities=communities, k=k)
+            elif alg == "EFFECTIVE_SIZE":
+                new_graph = LinkWithStructuralHoles(graph=graph_copy, communities=communities, k=k)
             else:
                 if hybrid:
                     new_graph = HybridLinkPrediction(graph=graph_copy, communities=communities,
@@ -55,6 +59,7 @@ def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: 
                                                     algorithm=alg, k=k)
 
             new_edges = len(new_graph.graph.edges)
+            percentage_edges_added = new_graph.percentage_edges_added
             print("Number edges after: {}".format(new_edges))
 
             rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=communities)
@@ -71,7 +76,8 @@ def results(g: nx.Graph, communities: dict, n_edges: list, link_prediction_alg: 
                  "ForceAtlas_post": force_atlas_post.controversy,
                  "Original_edges": original_edges,
                  "New_edges": new_edges,
-                 "Number_edges_added": k
+                 "Number_edges_added": k,
+                 "Percentage_edges_added": percentage_edges_added
                  },
                 ignore_index=True
             )
