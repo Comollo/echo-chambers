@@ -123,10 +123,9 @@ def write_communities(communities: Dict[int, set], filename: str, path: str = ".
     path : location of your file
     """
     print("writing communities")
-    original_name = filename.strip().split(".")
     for community in communities:
 
-        txt_name = original_name[0] + "_" + str(community) + "." + original_name[1]
+        txt_name = filename + "_" + str(community) + ".csv"
         file = open(path + txt_name, 'w')
 
         for node in communities[community]:

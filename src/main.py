@@ -42,6 +42,7 @@ try:
                              ],
                              link_prediction_alg=[
                                  "BETWEENNESS",
+                                 "EFFECTIVE_SIZE",
                                  "JACCARD_COEFFICIENT",
                                  "ADAMIC_ADAR",
                                  "RESOURCE_ALLOCATION",
