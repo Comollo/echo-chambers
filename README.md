@@ -27,6 +27,6 @@ main.py: it is the main code
 ## How to run the code:
 
 ```
-run python main.py --help for usage
+run "python main.py --help" for usage
 ```
 
