@@ -7,8 +7,8 @@ import networkx as nx
 import numpy as np
 from scipy.sparse import coo_matrix
 
-from src.common.utility import lists_to_dict, border_msg
-from src.controversy.controversy_measure import ControversyMeasure
+from common.utility import lists_to_dict, border_msg
+from controversy.controversy_measure import ControversyMeasure
 
 
 class RandomWalkControversy(ControversyMeasure):
@@ -90,8 +90,9 @@ class RandomWalkControversy(ControversyMeasure):
         dict_side: dict = dict((k, 1) for k in side)
         random_nodes = {}
         dict_degrees = {}
-        for node in self.graph.nodes():
-            dict_degrees[node] = self.graph.degree(node)
+        # for node in self.graph.nodes():
+        #     dict_degrees[node] = self.graph.degree(node)
+        dict_degrees = dict(nx.degree(self.graph))
         sorted_dict = sorted(dict_degrees.items(), key=itemgetter(1), reverse=True)
         count = 0
 
@@ -391,7 +392,7 @@ class EdgeBetweennessControversy(ControversyMeasure):
 
     def __init__(self, graph: nx.Graph, communities: dict):
 
-        self.edge_betweenness = nx.edge_betweenness(graph)
+        self.edge_betweenness = nx.edge_betweenness_centrality(graph)
         super().__init__(graph, communities)
 
     def get_controversy(self):

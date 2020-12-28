@@ -6,7 +6,7 @@ from typing import Dict
 import networkx as nx
 from networkx.algorithms import community
 
-from src.common.utility import print_element
+from common.utility import print_element
 
 
 @unique

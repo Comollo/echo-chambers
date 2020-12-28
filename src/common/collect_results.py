@@ -3,8 +3,8 @@
 import networkx as nx
 import pandas as pd
 
-from src.controversy.measures import RandomWalkControversy, GMCK, ForceAtlasControversy
-from src.link_prediction.algorithms import LinkWithBetweenness, HybridLinkPrediction, StateOfArtAlgorithm, \
+from controversy.measures import RandomWalkControversy, GMCK, ForceAtlasControversy
+from link_prediction.algorithms import LinkWithBetweenness, HybridLinkPrediction, StateOfArtAlgorithm, \
     LinkWithStructuralHoles
 
 

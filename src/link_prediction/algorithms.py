@@ -8,8 +8,8 @@ from typing import List
 
 import networkx as nx
 
-from src.common.utility import print_element
-from src.link_prediction.link_algorithm import LinkAlgorithm
+from common.utility import print_element
+from link_prediction.link_algorithm import LinkAlgorithm
 
 
 @unique

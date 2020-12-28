@@ -27,9 +27,6 @@ main.py: it is the main code
 ## How to run the code:
 
 ```
-In order to run the code, you should simply run the main.py
-parameters:
-a) folder data: path containing the dataset
-b) hybrid: boolean (True or False) if you want to use the hybrid or standard measures
+run python main.py --help for usage
 ```
 
