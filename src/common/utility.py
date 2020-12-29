@@ -1,10 +1,12 @@
 # define some common useful functions
 
+import json
 import os
 from typing import Dict
 
 import networkx as nx
 import numpy as np
+import yaml
 from matplotlib import pyplot as plt
 
 
@@ -135,6 +137,52 @@ def write_communities(communities: Dict[int, set], filename: str, path: str = ".
         file.close()
 
     print("all communities have been written")
+
+
+def write_dict_to_json(dict_to_write: dict, filename: str, path: str):
+    """
+    Write dict to json
+
+    Parameter
+    ---------
+    dict_to_write : dictionary
+    filename : name for txt
+    path : location of your file
+    """
+    if not filename.endswith('.json'):
+        filename = filename + '.json'
+    with open(os.path.join(path, filename), 'w') as json_file:
+        json.dump(dict_to_write, json_file)
+
+
+def write_dict_to_yaml(dict_to_write: dict, filename: str, path: str):
+    """
+    Write dict to yaml
+
+    Parameter
+    ---------
+    dict_to_write : dictionary
+    filename : name for txt
+    path : location of your file
+    """
+    with open(os.path.join(path, filename), 'w') as yaml_file:
+        yaml.dump(dict_to_write, yaml_file)
+
+
+def read_json_to_dict(filename: str, path: str):
+    """
+    Read json file
+
+    Parameter
+    ---------
+    filename : name file
+    path : location of your file
+    """
+    if not filename.endswith('.json'):
+        filename = filename + '.json'
+    with open(os.path.join(path, filename)) as json_file:
+        data = json.load(json_file)
+    return data
 
 
 def write_gexf(graph: nx.Graph, filename: str, path: str = "../data/"):

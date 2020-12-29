@@ -13,19 +13,19 @@ from controversy.controversy_measure import ControversyMeasure
 
 class RandomWalkControversy(ControversyMeasure):
 
-    def __init__(self, graph: nx.Graph, communities: dict, iteration: int = 1000, percent: float = 0.10):
+    def __init__(self, graph: nx.Graph, communities: dict, iteration: int = 1000, percent: float = 0.10, compute=True):
 
         self.iteration = iteration
         self.percent = percent
-        super().__init__(graph, communities)
+        super().__init__(graph, compute, communities)
 
     def get_controversy(self):
 
         percent = self.percent
         graph = self.graph
 
-        left = list(self.communities[0])
-        right = list(self.communities[1])
+        left = self.communities["0"]
+        right = self.communities["1"]
 
         left_left = 0
         left_right = 0
@@ -145,13 +145,13 @@ class RandomWalkControversy(ControversyMeasure):
 
 class GMCK(ControversyMeasure):
 
-    def __init__(self, graph: nx.Graph, communities: dict):
-        super().__init__(graph, communities)
+    def __init__(self, graph: nx.Graph, communities: dict, compute=True):
+        super().__init__(graph, compute, communities)
 
     def get_controversy(self):
 
-        left = list(self.communities[0])
-        right = list(self.communities[1])
+        left = self.communities["0"]
+        right = self.communities["1"]
         dict_left = lists_to_dict(left, [1] * len(left))
         dict_right = lists_to_dict(right, [1] * len(right))
 
@@ -174,76 +174,81 @@ class GMCK(ControversyMeasure):
             if self.__satisfy_second_condition(keys, self.graph, dict_left, dict_right, cut_nodes1):
                 cut_nodes[keys] = 1
 
-        for edge in self.graph.edges():
-
-            node1 = edge[0]
-            node2 = edge[1]
-
-            if node1 not in cut_nodes and (node2 not in cut_nodes):  # only consider edges involved in the cut
-                continue
-            if node1 in cut_nodes and node2 in cut_nodes:
-                # if both nodes are on the cut and both are on the same side, ignore
-                if node1 in dict_left and node2 in dict_left:
-                    continue
-                if node1 in dict_right and node2 in dict_right:
-                    continue
-            if node1 in cut_nodes:
-                if node1 in dict_left:
-                    if node2 in dict_left and node2 not in cut_nodes1:
-                        if node1 in dict_internal:
-                            dict_internal[node1] += 1
-                        else:
-                            dict_internal[node1] = 1
-                    elif node2 in dict_right and node2 in cut_nodes:
-                        if node1 in dict_across:
-                            dict_across[node1] += 1
-                        else:
-                            dict_across[node1] = 1
-                elif node1 in dict_right:
-                    if node2 in dict_left and node2 in cut_nodes:
-                        if node1 in dict_across:
-                            dict_across[node1] += 1
-                        else:
-                            dict_across[node1] = 1
-                    elif node2 in dict_right and node2 not in cut_nodes1:
-                        if node1 in dict_internal:
-                            dict_internal[node1] += 1
-                        else:
-                            dict_internal[node1] = 1
-            if node2 in cut_nodes:
-                if node2 in dict_left:
-                    if node1 in dict_left and node1 not in cut_nodes1:
-                        if node2 in dict_internal:
-                            dict_internal[node2] += 1
-                        else:
-                            dict_internal[node2] = 1
-                    elif node1 in dict_right and node1 in cut_nodes:
-                        if node2 in dict_across:
-                            dict_across[node2] += 1
-                        else:
-                            dict_across[node2] = 1
-                elif node2 in dict_right:
-                    if node1 in dict_left and node1 in cut_nodes:
-                        if node2 in dict_across:
-                            dict_across[node2] += 1
-                        else:
-                            dict_across[node2] = 1
-                    elif node1 in dict_right and node1 not in cut_nodes1:
-                        if node2 in dict_internal:
-                            dict_internal[node2] += 1
-                        else:
-                            dict_internal[node2] = 1
-
+        boundary = len(cut_nodes)
         polarization_score = 0.0
+        if boundary != 0:
+            for edge in self.graph.edges():
 
-        for keys in cut_nodes.keys():
-            if keys not in dict_internal or (keys not in dict_across):  # for singleton nodes from the cut
-                continue
-            if dict_across[keys] == 0 and dict_internal[keys] == 0:  # there's some problem
-                print("wtf")
-            polarization_score += (dict_internal[keys] * 1.0 / (dict_internal[keys] + dict_across[keys]) - 0.5)
+                node1 = edge[0]
+                node2 = edge[1]
 
-        polarization_score = round(polarization_score / len(cut_nodes.keys()), 4)
+                if node1 not in cut_nodes and (node2 not in cut_nodes):  # only consider edges involved in the cut
+                    continue
+                if node1 in cut_nodes and node2 in cut_nodes:
+                    # if both nodes are on the cut and both are on the same side, ignore
+                    if node1 in dict_left and node2 in dict_left:
+                        continue
+                    if node1 in dict_right and node2 in dict_right:
+                        continue
+                if node1 in cut_nodes:
+                    if node1 in dict_left:
+                        if node2 in dict_left and node2 not in cut_nodes1:
+                            if node1 in dict_internal:
+                                dict_internal[node1] += 1
+                            else:
+                                dict_internal[node1] = 1
+                        elif node2 in dict_right and node2 in cut_nodes:
+                            if node1 in dict_across:
+                                dict_across[node1] += 1
+                            else:
+                                dict_across[node1] = 1
+                    elif node1 in dict_right:
+                        if node2 in dict_left and node2 in cut_nodes:
+                            if node1 in dict_across:
+                                dict_across[node1] += 1
+                            else:
+                                dict_across[node1] = 1
+                        elif node2 in dict_right and node2 not in cut_nodes1:
+                            if node1 in dict_internal:
+                                dict_internal[node1] += 1
+                            else:
+                                dict_internal[node1] = 1
+                if node2 in cut_nodes:
+                    if node2 in dict_left:
+                        if node1 in dict_left and node1 not in cut_nodes1:
+                            if node2 in dict_internal:
+                                dict_internal[node2] += 1
+                            else:
+                                dict_internal[node2] = 1
+                        elif node1 in dict_right and node1 in cut_nodes:
+                            if node2 in dict_across:
+                                dict_across[node2] += 1
+                            else:
+                                dict_across[node2] = 1
+                    elif node2 in dict_right:
+                        if node1 in dict_left and node1 in cut_nodes:
+                            if node2 in dict_across:
+                                dict_across[node2] += 1
+                            else:
+                                dict_across[node2] = 1
+                        elif node1 in dict_right and node1 not in cut_nodes1:
+                            if node2 in dict_internal:
+                                dict_internal[node2] += 1
+                            else:
+                                dict_internal[node2] = 1
+            for keys in cut_nodes.keys():
+                if keys not in dict_internal or (keys not in dict_across):  # for singleton nodes from the cut
+                    continue
+                if dict_across[keys] == 0 and dict_internal[keys] == 0:  # there's some problem
+                    print("wtf")
+                polarization_score += (dict_internal[keys] * 1.0 / (dict_internal[keys] + dict_across[keys]) - 0.5)
+            polarization_score = round(polarization_score / boundary, 4)
+        else:
+            if len(cut_nodes1) == len(self.graph.nodes):
+                polarization_score = -0.5
+            elif len(cut_nodes1) == 0:
+                polarization_score = 0.5
+
         border_msg("GMCK controversy - boundary connectivity: {}".format(polarization_score))
         return polarization_score
 
@@ -252,28 +257,35 @@ class GMCK(ControversyMeasure):
         # A node v in G_i has at least one edge connecting to a member of G_i which is not connected to G_j.
         neighbors = graph.neighbors(node1)
         for n in neighbors:
-            if node1 in dict_left and n in dict_right:  # only consider neighbors belonging to G_i
-                continue
-            if node1 in dict_right and n in dict_left:  # only consider neighbors belonging to G_i
-                continue
-            if n not in cut:
-                return True
+            if node1 in dict_left and n in dict_left:
+                if n not in cut:
+                    return True
+            elif node1 in dict_right and n in dict_right:
+                if n not in cut:
+                    return True
         return False
+        #     if node1 in dict_left and n in dict_right:  # only consider neighbors belonging to G_i
+        #         continue
+        #     if node1 in dict_right and n in dict_left:  # only consider neighbors belonging to G_i
+        #         continue
+        #     if n not in cut:
+        #         return True
+        # return False
 
 
 class ForceAtlasControversy(ControversyMeasure):
 
-    def __init__(self, graph: nx.Graph, communities: dict, atlas_properties: dict = None):
+    def __init__(self, graph: nx.Graph, communities: dict, atlas_properties: dict = None, compute=True):
 
         if atlas_properties is None:
             atlas_properties = {"iterations": 1000, "linlog": False, "pos": None, "nohubs": False, "k": None, "dim": 2}
-        self.position_node = self.__force_atlas2_layout(graph, atlas_properties)
-        super().__init__(graph, communities)
+        self.position_node = self.__force_atlas2_layout(graph, atlas_properties) if compute else None
+        super().__init__(graph, compute, communities)
 
     def get_controversy(self):
 
-        left = list(self.communities[0])
-        right = list(self.communities[1])
+        left = self.communities["0"]
+        right = self.communities["1"]
         dict_left = lists_to_dict(left, [1] * len(left))
         dict_right = lists_to_dict(right, [1] * len(right))
 
@@ -390,15 +402,15 @@ class ForceAtlasControversy(ControversyMeasure):
 # not used
 class EdgeBetweennessControversy(ControversyMeasure):
 
-    def __init__(self, graph: nx.Graph, communities: dict):
+    def __init__(self, graph: nx.Graph, communities: dict, compute=True):
 
         self.edge_betweenness = nx.edge_betweenness_centrality(graph)
-        super().__init__(graph, communities)
+        super().__init__(graph, compute, communities)
 
     def get_controversy(self):
 
-        left = list(self.communities[0])
-        right = list(self.communities[1])
+        left = self.communities["0"]
+        right = self.communities["1"]
 
         eb_list = []
 

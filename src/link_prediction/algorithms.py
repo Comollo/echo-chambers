@@ -5,7 +5,7 @@ from enum import Enum, unique
 from itertools import islice, chain
 from random import shuffle
 from typing import List
-
+from common.utility import write_dict_to_json
 import networkx as nx
 
 from common.utility import print_element
@@ -22,24 +22,37 @@ class TypeOfAlgorithm(Enum):
 
 class LinkWithBetweenness(LinkAlgorithm):
 
-    def __init__(self, graph: nx.Graph, communities: dict, k: int = 1000):
+    def __init__(self,
+                 graph: nx.Graph,
+                 communities: dict,
+                 filename: str,
+                 given_betweenness_value: dict = None,
+                 k: float = 0.5):
 
         self.k = k
+        self.filename = filename + '_betweenness'
+        self.betweenness_values = given_betweenness_value
         super().__init__(graph, communities)
 
     def prediction(self):
 
         highest_betweenness = dict()
 
-        for community in self.communities:
-            print("Getting betweenness for community {}".format(community))
-            subgraph = nx.subgraph(self.graph, self.communities[community])
-            highest_betweenness[community] = self.__get_betweenness(subgraph)
+        if not self.betweenness_values:
+            for community in self.communities:
+                print("Getting betweenness for community {}".format(community))
+                subgraph = nx.subgraph(self.graph, self.communities[community])
+                highest_betweenness[community] = self.__get_betweenness(subgraph)
 
-        print("Betweenness done")
+            print("Betweenness done")
+            write_dict_to_json(highest_betweenness, self.filename, "../betweenness/")
+            print("Betweenness values written")
+        else:
+            print("Betweenness provided")
+            highest_betweenness = self.betweenness_values
 
-        highest_betweenness_left = highest_betweenness[0]
-        highest_betweenness_right = highest_betweenness[1]
+        highest_betweenness_left = highest_betweenness["0"]
+        highest_betweenness_right = highest_betweenness["1"]
         non_connected_nodes = list(nx.non_edges(self.graph))
         n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
@@ -58,14 +71,16 @@ class LinkWithBetweenness(LinkAlgorithm):
         possible_new_edges = {k: v for k, v in
                               sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
 
-        if self.k < len(possible_new_edges):
-            edges_to_add = islice(possible_new_edges.keys(), self.k)
-            number_edges = self.k
+        max_links = len(possible_new_edges)
+        all_possible_new_edges = possible_new_edges.keys()
+        if self.k < 1:
+            number_edges = round(self.k * max_links)
+            edges_to_add = islice(all_possible_new_edges, number_edges)
         else:
-            edges_to_add = possible_new_edges.keys()
-            number_edges = len(possible_new_edges)
+            number_edges = max_links
+            edges_to_add = all_possible_new_edges
 
-        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        self.percentage_edges_added = self.k
         print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
@@ -75,12 +90,13 @@ class LinkWithBetweenness(LinkAlgorithm):
     @staticmethod
     def __get_betweenness(graph: nx.Graph):
 
-        betweenness = dict(
-            filter(
-                lambda x: x[1] > 0,
-                nx.betweenness_centrality(graph, normalized=True, seed=10).items()
-            )
-        )
+        # betweenness = dict(
+        #     filter(
+        #         lambda x: x[1] >= 0,
+        #         nx.betweenness_centrality(graph, normalized=True, seed=10).items()
+        #     )
+        # )
+        betweenness = nx.betweenness_centrality(graph, normalized=True, seed=10)
         sorted_betweenness = {k: v for k, v in sorted(betweenness.items(), key=lambda item: item[1], reverse=True)}
         return sorted_betweenness
 
@@ -117,7 +133,7 @@ class StateOfArtAlgorithm(LinkAlgorithm):
                   TypeOfAlgorithm.RESOURCE_ALLOCATION.value,
                   TypeOfAlgorithm.PREFERENTIAL_ATTACHMENT.value]
 
-    def __init__(self, graph: nx.Graph, communities: dict, algorithm: str, k: int = 1000):
+    def __init__(self, graph: nx.Graph, communities: dict, algorithm: str, k: float = 0.5):
 
         if algorithm.upper() not in self.algorithms:
             print("The available partition algorithms are:")
@@ -129,8 +145,8 @@ class StateOfArtAlgorithm(LinkAlgorithm):
 
     def prediction(self):
 
-        left = self.communities[0]
-        right = self.communities[1]
+        left = self.communities["0"]
+        right = self.communities["1"]
         non_connected_nodes = list(nx.non_edges(self.graph))
         n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
@@ -160,14 +176,23 @@ class StateOfArtAlgorithm(LinkAlgorithm):
                 reverse=True)
         )
 
-        if self.k < len(edges_to_add):
-            edges_to_add = islice(edges_to_add, self.k)
-            number_edges = self.k
+        max_links = len(edges_to_add)
+        all_possible_new_edges = edges_to_add
+        if self.k < 1:
+            number_edges = round(self.k * max_links)
+            edges_to_add = islice(all_possible_new_edges, number_edges)
         else:
-            edges_to_add = edges_to_add
-            number_edges = len(edges_to_add)
+            edges_to_add = all_possible_new_edges
+            number_edges = max_links
 
-        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        # if self.k < len(edges_to_add):
+        #     edges_to_add = islice(edges_to_add, self.k)
+        #     number_edges = self.k
+        # else:
+        #     edges_to_add = edges_to_add
+        #     number_edges = len(edges_to_add)
+
+        self.percentage_edges_added = self.k
         print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
@@ -177,23 +202,37 @@ class StateOfArtAlgorithm(LinkAlgorithm):
 
 class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
 
-    def __init__(self, graph: nx.Graph, communities: dict, algorithm: str, k: int = 1000):
+    def __init__(self,
+                 graph: nx.Graph,
+                 communities: dict,
+                 algorithm: str,
+                 filename: str,
+                 given_betweenness_value: dict = None,
+                 k: float = 0.5):
 
+        self.filename = filename + '_betweenness'
+        self.betweenness_values = given_betweenness_value
         StateOfArtAlgorithm.__init__(self, graph=graph, communities=communities, algorithm=algorithm, k=k)
 
     def prediction(self):
 
         highest_betweenness = dict()
 
-        for community in self.communities:
-            print("Getting betweenness for community {}".format(community))
-            subgraph = nx.subgraph(self.graph, self.communities[community])
-            highest_betweenness[community] = self._LinkWithBetweenness__get_betweenness(subgraph)
+        if not self.betweenness_values:
+            for community in self.communities:
+                print("Getting betweenness for community {}".format(community))
+                subgraph = nx.subgraph(self.graph, self.communities[community])
+                highest_betweenness[community] = self._LinkWithBetweenness__get_betweenness(subgraph)
 
-        print("Betweenness done")
+            print("Betweenness done")
+            write_dict_to_json(highest_betweenness, self.filename, "../betweenness/")
+            print("Betweenness values written")
+        else:
+            print("Betweenness provided")
+            highest_betweenness = self.betweenness_values
 
-        highest_betweenness_left = highest_betweenness[0]
-        highest_betweenness_right = highest_betweenness[1]
+        highest_betweenness_left = highest_betweenness["0"]
+        highest_betweenness_right = highest_betweenness["1"]
         non_connected_nodes = list(nx.non_edges(self.graph))
         n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
@@ -231,14 +270,16 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
         scores = self.__combine_scores(ranked_betweenness_nodes, ranked_similarity_nodes)
         scores = {k: v for k, v in sorted(scores.items(), key=lambda item: item[1], reverse=True)}
 
-        if self.k < len(scores):
-            edges_to_add = islice(scores.keys(), self.k)
-            number_edges = self.k
+        max_links = len(scores)
+        all_possible_new_edges = scores.keys()
+        if self.k < 1:
+            number_edges = round(self.k, max_links)
+            edges_to_add = islice(all_possible_new_edges, number_edges)
         else:
-            edges_to_add = scores.keys()
-            number_edges = len(scores)
+            number_edges = max_links
+            edges_to_add = all_possible_new_edges
 
-        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        self.percentage_edges_added = self.k
         print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
@@ -260,24 +301,37 @@ class HybridLinkPrediction(LinkWithBetweenness, StateOfArtAlgorithm):
 
 class LinkWithStructuralHoles(LinkAlgorithm):
 
-    def __init__(self, graph: nx.Graph(), communities: dict, k: int = 1000):
+    def __init__(self,
+                 graph: nx.Graph(),
+                 communities: dict,
+                 filename: str,
+                 given_effective_size: dict = None,
+                 k: float = 0.5):
 
+        self.filename = filename + '_effective_size'
         self.k = k
+        self.structural_holes = given_effective_size
         super().__init__(graph, communities)
 
     def prediction(self):
 
         effective_size = dict()
 
-        for community in self.communities:
-            print("Getting effective size for community {}".format(community))
-            subgraph = nx.subgraph(self.graph, self.communities[community])
-            effective_size[community] = self.__get_effective_size(subgraph)
+        if not self.structural_holes:
+            for community in self.communities:
+                print("Getting effective size for community {}".format(community))
+                subgraph = nx.subgraph(self.graph, self.communities[community])
+                effective_size[community] = self.__get_effective_size(subgraph)
 
-        print("Effective size done")
+            print("Effective size done")
+            write_dict_to_json(effective_size, self.filename, "../effective_size/")
+            print("Effective size values written")
+        else:
+            print("Effective size provided")
+            effective_size = self.structural_holes
 
-        effective_size_left = effective_size[0]
-        effective_size_right = effective_size[1]
+        effective_size_left = effective_size["0"]
+        effective_size_right = effective_size["1"]
         non_connected_nodes = list(nx.non_edges(self.graph))
         n_possible_new_connections = len(non_connected_nodes)
         non_connected_nodes = list(
@@ -296,14 +350,16 @@ class LinkWithStructuralHoles(LinkAlgorithm):
         possible_new_edges = {k: v for k, v in
                               sorted(possible_new_edges.items(), key=lambda item: item[1], reverse=True)}
 
-        if self.k < len(possible_new_edges):
-            edges_to_add = islice(possible_new_edges.keys(), self.k)
-            number_edges = self.k
+        max_links = len(possible_new_edges)
+        all_possible_new_edges = possible_new_edges.keys()
+        if self.k < 1:
+            number_edges = round(self.k * max_links)
+            edges_to_add = islice(all_possible_new_edges, number_edges)
         else:
-            edges_to_add = possible_new_edges.keys()
-            number_edges = len(possible_new_edges)
+            number_edges = max_links
+            edges_to_add = all_possible_new_edges
 
-        self.percentage_edges_added = round(number_edges / n_possible_new_connections, 4)
+        self.percentage_edges_added = self.k
         print("% of edges added: {}".format(self.percentage_edges_added))
         print("Adding {} edges".format(number_edges))
 
@@ -356,8 +412,8 @@ class RandomLink(LinkAlgorithm):
         super().__init__(graph, communities)
 
     def prediction(self):
-        left = self.communities[0]
-        right = self.communities[1]
+        left = self.communities["0"]
+        right = self.communities["1"]
         non_connected_nodes = nx.non_edges(self.graph)
         non_connected_nodes = list(
             filter(lambda x:

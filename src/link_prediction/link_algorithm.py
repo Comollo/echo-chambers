@@ -8,7 +8,7 @@ from networkx import Graph
 
 class LinkAlgorithm(ABC):
 
-    def __init__(self, graph: Graph, communities: Dict[int, set]):
+    def __init__(self, graph: Graph, communities: Dict[str, list]):
 
         self.percentage_edges_added = 0
         self.graph = graph
