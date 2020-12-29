@@ -33,17 +33,17 @@ class CommunityDetection:
 
         print("Finding communities using: {}".format(self.algorithm.upper()))
 
-        communities: Dict[int, list] = dict()
+        communities: Dict[str, list] = dict()
 
         if self.algorithm.upper() == Algorithm.KERNIGHAN_LIN.value:
             partitions = community.kernighan_lin_bisection(self.graph)
             for p in range(len(partitions)):
-                communities[p] = list(partitions[p])
+                communities[str(p)] = list(partitions[p])
 
         elif self.algorithm.upper() == Algorithm.FLUIDC.value:
             partitions = community.asyn_fluidc(self.graph, k, seed=10)
             for p in range(k):
-                communities[p] = list(next(partitions))
+                communities[str(p)] = list(next(partitions))
 
         print("{} communities found".format(len(communities)))
         return communities

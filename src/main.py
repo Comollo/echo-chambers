@@ -69,6 +69,7 @@ try:
             if communities_to_write in communities_written:
                 given_communities = read_json_to_dict(communities_to_write, path_community)
                 communities = CommunityDetection(graph=graph, algorithm=algorithm, given_communities=given_communities)
+                print('Getting communities from file')
             else:
                 communities = CommunityDetection(graph=graph, algorithm=algorithm)
                 write_dict_to_json(communities.communities, communities_to_write, path_community)
