@@ -10,10 +10,14 @@ from link_prediction.algorithms import LinkWithBetweenness, HybridLinkPrediction
 
 def results(g: nx.Graph,
             communities: dict,
-            n_edges: list,
+            per_edges: float,
             filename: str,
             given_betweenness_value: dict,
             given_effective_size: dict,
+            given_jaccard_value:dict,
+            given_adamic_adar_value: dict,
+            given_resource_allocation_value: dict,
+            given_preferential_attachment_value: dict,
             complete: bool,
             link_prediction_alg: list,
             hybrid: bool = True):
@@ -52,66 +56,79 @@ def results(g: nx.Graph,
                  "Percentage_edges_added"]
     )
 
-    for k in n_edges:
-        for alg in link_prediction_alg:
+    given_values_state_of_art_alg = None
+    for alg in link_prediction_alg:
 
-            graph_copy = g.copy()
-            original_edges = len(graph_copy.edges)
-            print("Number edges before: {}".format(original_edges))
+        if alg == 'JACCARD_COEFFICIENT':
+            given_values_state_of_art_alg = given_jaccard_value
+        elif alg == "ADAMIC_ADAR":
+            given_values_state_of_art_alg = given_adamic_adar_value
+        elif alg == "RESOURCE_ALLOCATION":
+            given_values_state_of_art_alg = given_resource_allocation_value
+        elif alg == "PREFERENTIAL_ATTACHMENT":
+            given_values_state_of_art_alg = given_preferential_attachment_value
 
-            if alg == "BETWEENNESS":
-                new_graph = LinkWithBetweenness(graph=graph_copy,
+        graph_copy = g.copy()
+        original_edges = len(graph_copy.edges)
+        print("Number edges before: {}".format(original_edges))
+
+        if alg == "BETWEENNESS":
+            new_graph = LinkWithBetweenness(graph=graph_copy,
+                                            communities=communities,
+                                            k=per_edges,
+                                            filename=filename,
+                                            given_betweenness_value=given_betweenness_value)
+        elif alg == "EFFECTIVE_SIZE":
+            new_graph = LinkWithStructuralHoles(graph=graph_copy,
                                                 communities=communities,
-                                                k=k,
+                                                k=per_edges,
                                                 filename=filename,
-                                                given_betweenness_value=given_betweenness_value)
-            elif alg == "EFFECTIVE_SIZE":
-                new_graph = LinkWithStructuralHoles(graph=graph_copy,
-                                                    communities=communities,
-                                                    k=k,
-                                                    filename=filename,
-                                                    given_effective_size=given_effective_size)
+                                                given_effective_size=given_effective_size)
+        else:
+            if hybrid:
+                new_graph = HybridLinkPrediction(graph=graph_copy,
+                                                 communities=communities,
+                                                 algorithm=alg,
+                                                 k=per_edges,
+                                                 filename=filename,
+                                                 given_betweenness_value=given_betweenness_value,
+                                                 given_values=given_values_state_of_art_alg)
+                alg = "BETWEENNESS + " + alg
             else:
-                if hybrid:
-                    new_graph = HybridLinkPrediction(graph=graph_copy,
-                                                     communities=communities,
-                                                     algorithm=alg,
-                                                     k=k,
-                                                     filename=filename)
-                    alg = "BETWEENNESS + " + alg
-                else:
-                    new_graph = StateOfArtAlgorithm(graph=graph_copy,
-                                                    communities=communities,
-                                                    algorithm=alg,
-                                                    k=k)
+                new_graph = StateOfArtAlgorithm(graph=graph_copy,
+                                                communities=communities,
+                                                algorithm=alg,
+                                                k=per_edges,
+                                                filename=filename,
+                                                given_values=given_values_state_of_art_alg)
 
-            new_edges = len(new_graph.graph.edges)
-            percentage_edges_added = new_graph.percentage_edges_added
-            print("Number edges after: {}".format(new_edges))
+        new_edges = len(new_graph.graph.edges)
+        percentage_edges_added = new_graph.percentage_edges_added
+        print("Number edges after: {}".format(new_edges))
 
-            if complete:
-                gmck_post = GMCK(graph=new_graph.graph, communities=communities)
-                rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=communities)
-                force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=communities)
-            else:
-                gmck_post = GMCK(graph=new_graph.graph, communities=communities)
-                rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=communities, compute=complete)
-                force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=communities, compute=complete)
+        if complete:
+            gmck_post = GMCK(graph=new_graph.graph, communities=communities)
+            rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=communities)
+            force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=communities)
+        else:
+            gmck_post = GMCK(graph=new_graph.graph, communities=communities)
+            rwc_post = RandomWalkControversy(graph=new_graph.graph, communities=communities, compute=complete)
+            force_atlas_post = ForceAtlasControversy(graph=new_graph.graph, communities=communities, compute=complete)
 
-            df_result = df_result.append(
-                {"Algorithm": alg,
-                 "RWC_pre": rwc_pre.controversy,
-                 "RWC_post": rwc_post.controversy,
-                 "GMCK_pre": gmck_pre.controversy,
-                 "GMCK_post": gmck_post.controversy,
-                 "ForceAtlas_pre": force_atlas_pre.controversy,
-                 "ForceAtlas_post": force_atlas_post.controversy,
-                 "Original_edges": original_edges,
-                 "New_edges": new_edges,
-                 "Number_edges_added": new_edges - original_edges,
-                 "Percentage_edges_added": percentage_edges_added
-                 },
-                ignore_index=True
-            )
+        df_result = df_result.append(
+            {"Algorithm": alg,
+             "RWC_pre": rwc_pre.controversy,
+             "RWC_post": rwc_post.controversy,
+             "GMCK_pre": gmck_pre.controversy,
+             "GMCK_post": gmck_post.controversy,
+             "ForceAtlas_pre": force_atlas_pre.controversy,
+             "ForceAtlas_post": force_atlas_post.controversy,
+             "Original_edges": original_edges,
+             "New_edges": new_edges,
+             "Number_edges_added": new_edges - original_edges,
+             "Percentage_edges_added": percentage_edges_added
+             },
+            ignore_index=True
+        )
 
     return df_result

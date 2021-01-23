@@ -8,11 +8,14 @@ from networkx import Graph
 
 class LinkAlgorithm(ABC):
 
-    def __init__(self, graph: Graph, communities: Dict[str, list]):
+    def __init__(self, graph: Graph, communities: Dict[str, list], values: dict, filename):
 
         self.percentage_edges_added = 0
         self.graph = graph
         self.communities = communities
+        self.n_edges = len(graph.edges)
+        self.values = values
+        self.filename = filename
         self.prediction()
 
     @abstractmethod
